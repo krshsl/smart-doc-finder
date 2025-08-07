@@ -1,0 +1,30 @@
+from datetime import datetime, timedelta, timezone
+from beanie import Document, Link
+from pymongo import ASCENDING, IndexModel
+from pydantic import Field
+
+from .user import User
+
+class JWTToken(Document):
+    user: Link[User]
+    token: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    expires_at: datetime
+
+    class Settings:
+        name = "JWTToken"
+        indexes = [
+            "token",
+            "user",
+            [("expires_at", ASCENDING)],
+            IndexModel(
+                [("expires_at", ASCENDING)],
+                expireAfterSeconds=0,
+                name="expires_at_ttl_index"
+            ),
+        ]
+
+    @classmethod
+    async def create(cls, user: User, token: str, expires_in: int):
+        expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
+        return await cls(user=user, token=token, expires_at=expires_at).insert()
