@@ -1,4 +1,3 @@
-import asyncio
 from os import getenv
 from sys import exit
 
