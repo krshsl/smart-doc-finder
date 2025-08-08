@@ -12,6 +12,7 @@ import eventBus from "../services/eventBus";
 export type UserRole = "user" | "admin" | "moderator";
 
 export interface User {
+  id: string;
   name: string;
   email: string;
   role: UserRole;
@@ -29,12 +30,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const decodeToken = (token: string): User | null => {
   try {
     const payloadBase64 = token.split(".")[1];
-    const decodedPayload = JSON.parse(atob(payloadBase64));
-    return {
-      name: decodedPayload.name,
-      email: decodedPayload.email,
-      role: decodedPayload.role,
-    };
+    return JSON.parse(atob(payloadBase64));
   } catch (error) {
     console.error("Failed to decode token:", error);
     return null;

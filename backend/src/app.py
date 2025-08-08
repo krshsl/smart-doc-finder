@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from dotenv import load_dotenv
 
 from .client import init_db
-from .routes import routes
+from .api import routes
 
 app = FastAPI()
 app.include_router(routes)

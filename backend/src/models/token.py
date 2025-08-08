@@ -26,5 +26,5 @@ class JWTToken(Document):
 
     @classmethod
     async def create(cls, user: User, token: str, expires_in: int):
-        expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=expires_in)
         return await cls(user=user, token=token, expires_at=expires_at).insert()

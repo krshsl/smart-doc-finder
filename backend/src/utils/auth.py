@@ -1,5 +1,5 @@
 from datetime import datetime, timezone, timedelta
-from typing import Union, Optional
+from typing import Union, Optional, Tuple
 from os import getenv
 
 import jwt
@@ -10,7 +10,8 @@ from pydantic import BaseModel
 
 from src.models import JWTToken, User
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 24*30*60 # 1 month/30 days
+MAX_TOKEN_LIMIT = 10
+ACCESS_TOKEN_EXPIRE_MINUTES = 12*60 # 12 hours
 security = HTTPBearer(auto_error=False)
 
 class Token(BaseModel):
@@ -29,17 +30,17 @@ def _get_password_hash(password):
     return pwd_context.hash(password)
 
 async def _create_access_token(user: User, expires_delta: Union[timedelta, None] = None):
-    to_encode = user._to_dict()
+    to_encode = await user._to_dict()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, getenv("SECRET_KEY"), getenv("ALGORITHM"))
 
     oldest_token = await JWTToken.find_one(JWTToken.user == user, sort=[("created_at", 1)])
     token_count = await JWTToken.find(JWTToken.user == user).count()
-    if token_count >= 10 and oldest_token: # Max sessions per user is 10
+    if token_count >= MAX_TOKEN_LIMIT and oldest_token:
         await oldest_token.delete()
 
     await JWTToken.create(user=user, token=encoded_jwt, expires_in=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -49,15 +50,16 @@ async def _authenticate_user(username: str, password: str) -> User | None:
     user = await User.find_one(User.username == username)
     if user is None:
         return None
+
     if not _verify_password(password, user.password):
         return None
 
     return user
 
 async def verify_access_token(
-    credentials: Optional[HTTPAuthorizationCredentials],
+    credentials: Optional[HTTPAuthorizationCredentials] = Security(security),
     required: bool = True
-):
+) -> Optional[Tuple[JWTToken, User]]:
     if not credentials:
         if required:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing token")
@@ -65,15 +67,23 @@ async def verify_access_token(
         return None
 
     token = credentials.credentials
-    token_doc = await JWTToken.find_one(JWTToken.token == token, JWTToken.revoked == False)
+    token_data = await JWTToken.find_one(JWTToken.token == token)
 
-    if not token_doc:
+    if not token_data:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
-    if token_doc.expires_at < datetime.now(timezone.utc):
+    expires_at = token_data.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+
+    if expires_at < datetime.now(timezone.utc):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired")
 
-    return token_doc
+    current_user = await token_data.user.fetch()
+    if not current_user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+
+    return token_data, current_user
 
 async def verify_access_token_optional(
     credentials: Optional[HTTPAuthorizationCredentials] = Security(security)

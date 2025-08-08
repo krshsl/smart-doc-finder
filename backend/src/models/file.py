@@ -1,5 +1,7 @@
 from typing import Optional, List
-from beanie import Link
+from beanie import Link, Delete, before_event
+from pydantic import Field
+from bson import ObjectId
 
 from .baseDocument import BaseDocument
 from .folder import Folder
@@ -9,8 +11,24 @@ class File(BaseDocument):
     file_name: str
     file_type: Optional[str] = None
     file_size: Optional[int] = None
-    storage_path: str
     owner: Link[User]
     folder: Optional[Link[Folder]] = None
     tags: List[str] = []
-    embedding_id: Optional[str] = None
+    gridfs_id: Optional[str] = Field(default=None)
+
+    @before_event(Delete)
+    async def _delete_gridfs_file(self):
+        from src.client import fs
+
+        if self.gridfs_id and await fs.exists(ObjectId(self.gridfs_id)):
+            await fs.delete(ObjectId(self.gridfs_id))
+
+    async def _to_dict(self):
+        return {
+            "id": str(self.id),
+            "file_name": self.file_name,
+            "file_type": self.file_type,
+            "file_size": self.file_size,
+            "tags": self.tags,
+            "gridfs_id": str(self.gridfs_id)
+        }
