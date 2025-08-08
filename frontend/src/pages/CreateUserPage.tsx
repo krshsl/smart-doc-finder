@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import LoadingOverlay from "../components/LoadingOverlay";
 import Modal from "../components/Modal";
@@ -12,6 +12,7 @@ const CreateUserPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
+  const formRef = useRef<HTMLFormElement>(null);
 
   const isPublicSignUp = !user;
 
@@ -31,10 +32,10 @@ const CreateUserPage: React.FC = () => {
     };
 
     try {
-      await api.post("/create_user", payload);
+      await api.post("/user", payload);
       setModalMessage(`Account for ${data.email} created successfully!`);
+      formRef.current?.reset();
       setIsModalOpen(true);
-      e.currentTarget.reset();
     } catch (err: any) {
       if (err.response && err.response.data) {
         const errorData = err.response.data;
@@ -70,7 +71,7 @@ const CreateUserPage: React.FC = () => {
     <div className="w-full max-w-md">
       <h1 className="mb-2 text-4xl font-bold text-gray-800">{pageTitle}</h1>
       <p className="mb-8 text-gray-500">{pageSubtitle}</p>
-      <form onSubmit={handleCreateUser}>
+      <form ref={formRef} onSubmit={handleCreateUser}>
         <div className="mb-4">
           <label
             className="mb-2 block font-medium text-gray-700"
