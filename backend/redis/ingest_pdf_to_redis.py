@@ -11,7 +11,7 @@ dotenv_path = os.path.join(os.path.dirname(__file__), "..", "dev.env")
 load_dotenv(dotenv_path=dotenv_path)
 
 # ---------- CONFIG ----------
-PDF_FOLDER = "pdfs"             # Folder containing PDFs
+PDF_FOLDER = "files"             # Folder containing PDFs
 INDEX_NAME = "doc_index"
 DOC_PREFIX = "doc:"             # Redis key prefix
 CHUNK_WORDS = 250               # Words per text chunk

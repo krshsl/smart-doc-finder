@@ -27,7 +27,7 @@ r = redis.Redis(
 
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
-def search_vector(query_text, k=1):  # force k=1
+def search_vector(query_text, k=TOP_K):
     q_emb = model.encode(query_text).astype(np.float32).tobytes()
     knn = f"*=>[KNN {k} @embedding $vec AS score]"
 
@@ -37,29 +37,37 @@ def search_vector(query_text, k=1):  # force k=1
     if not res.docs:
         return []
 
-    doc = res.docs[0]  # top 1 only
-    
-    filename = getattr(doc, "filename")
-    page = getattr(doc, "page")
-    content = getattr(doc, "content")
-    score = getattr(doc, "score")
+    results = []
+    for doc in res.docs:
+        filename = getattr(doc, "filename")
+        page = getattr(doc, "page")
+        content = getattr(doc, "content")
+        score = getattr(doc, "score")
 
-    # decode bytes if needed
-    if isinstance(filename, (bytes, bytearray)): filename = filename.decode()
-    if isinstance(page, (bytes, bytearray)): page = page.decode()
-    if isinstance(content, (bytes, bytearray)): content = content.decode()
-    if isinstance(score, (bytes, bytearray)): score = float(score.decode())
-    else: score = float(score)
+        # decode bytes if needed
+        if isinstance(filename, (bytes, bytearray)): filename = filename.decode()
+        if isinstance(page, (bytes, bytearray)): page = page.decode()
+        if isinstance(content, (bytes, bytearray)): content = content.decode()
+        if isinstance(score, (bytes, bytearray)): score = float(score.decode())
+        else: score = float(score)
 
-    return [{"filename": filename, "page": page, "content": content, "score": score}]
+        results.append({
+            "filename": filename,
+            "page": page,
+            "content": content,
+            "score": score
+        })
+
+    return results
 
 
 if __name__ == "__main__":
     q = input("Enter question: ")
-    results = search_vector(q, k=1)
+    results = search_vector(q, k=TOP_K)
     if not results:
         print("No matching document found.")
     else:
-        rdoc = results[0]
-        print(f"Best match: {rdoc['filename']} (page {rdoc['page']}) score={rdoc['score']:.4f}")
-        print(rdoc['content'][:500].replace("\n", " ") + "...\n")
+        for i, rdoc in enumerate(results, start=1):
+            print(f"{i}. {rdoc['filename']} (page {rdoc['page']}) score={rdoc['score']:.4f}")
+            print(rdoc['content'][:500].replace("\n", " ") + "...\n")
+
