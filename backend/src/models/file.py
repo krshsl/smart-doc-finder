@@ -18,9 +18,10 @@ class File(BaseDocument):
 
     @before_event(Delete)
     async def _delete_gridfs_file(self):
-        from src.client import fs
+        from src.client import get_fs
 
-        if self.gridfs_id and await fs.exists(ObjectId(self.gridfs_id)):
+        fs = get_fs()
+        if self.gridfs_id:
             await fs.delete(ObjectId(self.gridfs_id))
 
     async def _to_dict(self):

@@ -1,62 +1,70 @@
-from fastapi import APIRouter, HTTPException, Depends, status, UploadFile, File as FastAPIFile
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, Form, File as FastAPIFile, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, constr
 from bson import ObjectId
+from bson.dbref import DBRef
 from io import BytesIO
 from filetype import guess
+import urllib.parse
 
 import src.utils.auth as auth
-from src.client import fs
-from src.models.user import DEFAULT_FOLDER
-from src.models import File, Folder
+from src.client import get_fs
+from src.models import User, Folder, File
+from src.utils.constants import META_DATA_SIZE, DEFAULT_FOLDER, STORAGE_QUOTA
 
 router = APIRouter()
-
-class FileCreateRequest(BaseModel):
-    file_name: constr(min_length=1)
-    folder_id: str | None = None
-    tags: list[str] = []
 
 @router.post("/file", status_code=status.HTTP_201_CREATED)
 async def add_file(
     file: UploadFile = FastAPIFile(...),
-    data: FileCreateRequest = Depends(),
-    token = Depends(auth.verify_access_token)
+    file_name: str = Form(...),
+    folder_id: str | None = Form(None),
+    tags: list[str] = Form([]),
+    token = Depends(auth.verify_access_token),
+    fs = Depends(get_fs)
 ):
     token_data, current_user = token
-    if data.folder_id:
-        folder = await Folder.get(data.folder_id)
+    if folder_id:
+        folder = await Folder.get(folder_id)
     else:
-        folder = await Folder.find_one(Folder.name == DEFAULT_FOLDER, Folder.parent == None, Folder.owner == current_user.id)
+        folder = await Folder.find_one(Folder.name == DEFAULT_FOLDER, Folder.owner == DBRef(User.__name__, current_user.id), Folder.parent == None)
 
     if not folder:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found")
 
+    user = await folder.owner.fetch()
+    if not user or user.id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
     contents = await file.read()
     file_obj = BytesIO(contents)
 
-    file_size = len(contents)
+    file_size = META_DATA_SIZE + len(contents)
     kind = guess(contents)
-    mime_type = kind.mime if kind else None
+    mime_type = kind.mime if kind else file.content_type
 
-    if mime_type != "application/pdf":
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only PDF files are allowed")
+    allowed_mime_types = ["application/pdf", "text/plain", "text/csv", "image/jpeg", "image/png", "image/gif"]
+    if mime_type not in allowed_mime_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported file type. Allowed types are: {', '.join(allowed_mime_types)}"
+        )
 
     new_usage = current_user.used_storage + file_size
-    if new_usage > current_user.storage_quota:
+    if new_usage > STORAGE_QUOTA:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Storage quota exceeded")
 
     gridfs_id = None
     try:
-        gridfs_id = await fs.upload_from_stream(data.file_name, file_obj, metadata={"contentType": mime_type})
+        gridfs_id = await fs.upload_from_stream(file_name, file_obj, metadata={"contentType": mime_type})
 
         new_file = File(
-            file_name=data.file_name,
+            file_name=file_name,
             file_type=mime_type,
             file_size=file_size,
             owner=current_user,
             folder=folder,
-            tags=data.tags,
+            tags=tags,
             gridfs_id=str(gridfs_id)
         )
 
@@ -66,50 +74,99 @@ async def add_file(
 
         return {"message": "File has been created successfully", "file_id": str(new_file.id)}
     except Exception as e:
+        from src import logger
+
         if gridfs_id:
             await fs.delete(gridfs_id)
+        logger.error(e)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+class RenameRequest(BaseModel):
+    name: constr(min_length=1)
+
+@router.post("/file/edit/{file_id}", status_code=status.HTTP_200_OK)
+async def edit_file(
+    file_id: str,
+    payload: RenameRequest,
+    token=Depends(auth.verify_access_token),
+    fs=Depends(get_fs)
+):
+    token_data, current_user = token
+    file_doc = await File.get(ObjectId(file_id))
+    if not (file_doc and file_doc.gridfs_id):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found")
+
+    owner = await file_doc.owner.fetch()
+    if owner.id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+    try:
+        await fs.rename(ObjectId(file_doc.gridfs_id), payload.name)
+
+        file_doc.file_name = payload.name
+        await file_doc.save()
+
+        return {"message": "File has been renamed successfully"}
+    except Exception as e:
+        from src import logger
+
+        logger.error(e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error while renaming file")
 
 
 @router.get("/file/{file_id}", status_code=status.HTTP_200_OK)
 async def get_file(
     file_id: str,
-    token=Depends(auth.verify_access_token)
+    token=Depends(auth.verify_access_token),
+    fs=Depends(get_fs)
 ):
     token_data, current_user = token
     file_doc = await File.get(ObjectId(file_id))
-    if not (file_doc and file_doc.gridfs_id and await fs.exists(file_doc.gridfs_id)):
-        raise HTTPException(status_code=404, detail="File not found")
+    if not (file_doc and file_doc.gridfs_id):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found")
 
-    if file_doc.owner.id != current_user.id:
-        raise HTTPException(status_code=403, detail="Forbidden")
+    owner = await file_doc.owner.fetch()
+    if owner.id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
     buffer = BytesIO()
-    await fs.download_to_stream(ObjectId(file_doc.gridfs_id), buffer)
-    buffer.seek(0)
+    try:
+        await fs.download_to_stream(ObjectId(file_doc.gridfs_id), buffer)
+        buffer.seek(0)
+    except Exception as e:
+        from src import logger
 
+        logger.error(e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error while loading file")
+
+    encoded_filename = urllib.parse.quote(file_doc.file_name)
     return StreamingResponse(
         buffer,
         media_type=file_doc.file_type or "application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{file_doc.file_name}"'}
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"}
     )
 
 @router.delete("/file/{file_id}", status_code=status.HTTP_200_OK)
 async def delete_file(
     file_id: str,
-    token=Depends(auth.verify_access_token)
+    token=Depends(auth.verify_access_token),
+    fs = Depends(get_fs)
 ):
     token_data, current_user = token
     file_doc = await File.get(ObjectId(file_id))
-    if not (file_doc and file_doc.gridfs_id and await fs.exists(file_doc.gridfs_id)):
-        raise HTTPException(status_code=404, detail="File not found")
+    if not (file_doc and file_doc.gridfs_id):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found")
 
-    if file_doc.owner.id != current_user.id:
-        raise HTTPException(status_code=403, detail="Forbidden")
+    owner = await file_doc.owner.fetch()
+    if owner.id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
     try:
         await file_doc.delete()
-    except Exception:
-        raise HTTPException(status_code=500, detail="Error deleting file from storage")
+    except Exception as e:
+        from src import logger
+
+        logger.error(e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error deleting file from storage")
 
     return {"message": "File has been successfully deleted"}

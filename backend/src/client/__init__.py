@@ -18,3 +18,12 @@ async def init_db(uri: str, db_name: str):
         database=db,
         document_models=[User, File, Folder, JWTToken]
     )
+
+def get_client() -> AsyncMongoClient:
+    return client
+
+def get_db() -> AsyncDatabase:
+    return db
+
+def get_fs() -> AsyncGridFSBucket:
+    return fs

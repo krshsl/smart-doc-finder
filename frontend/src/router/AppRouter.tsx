@@ -39,7 +39,7 @@ const AppRouter: React.FC = () => {
         }
       >
         <Route index element={<Navigate to="my-cloud" replace />} />
-        <Route path="my-cloud" element={<MyCloudPage />} />
+        <Route path="my-cloud/:folderId?" element={<MyCloudPage />} />
         <Route path="upload-files" element={<UploadFilesPage />} />
         <Route path="settings" element={<SettingsPage />}>
           <Route

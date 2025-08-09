@@ -1,19 +1,17 @@
 from beanie import Insert, Delete, before_event, after_event
 from pydantic import EmailStr, Field
 from asyncio import gather
+from bson.dbref import DBRef
 
 from .baseDocument import BaseDocument
-
-DEFAULT_FOLDER = "~"
-STORAGE_QUOTA = 32 * 1024 * 1024
-USER_LIMIT = 16
+from src.utils.constants import DEFAULT_FOLDER, META_DATA_SIZE
 
 class User(BaseDocument):
     email: EmailStr
     username: str
     password: str
     role: str = Field(default="user", pattern="^(admin|user|moderator)$")
-    used_storage: int = 0
+    used_storage: int = META_DATA_SIZE
 
     class Settings(BaseDocument.Settings):
         indexes = [
@@ -37,12 +35,12 @@ class User(BaseDocument):
     async def _delete_tokens(self):
         from .token import JWTToken
 
-        await JWTToken.delete_many(JWTToken.user == self.id)
+        await JWTToken.find(JWTToken.user == DBRef(User.__name__, self.id)).delete()
 
     async def _delete_default_folder(self):
         from .folder import Folder
 
-        await self.delete_one(Folder.name == DEFAULT_FOLDER, Folder.parent == None, Folder.owner == self.id)
+        await self.delete_one(Folder.name == DEFAULT_FOLDER, Folder.parent == None, Folder.owner == DBRef(User.__name__, self.id))
 
     async def _to_dict(self):
         return {

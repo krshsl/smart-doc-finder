@@ -8,21 +8,14 @@ import React, {
 
 import api, { setupInterceptors } from "../services/api";
 import eventBus from "../services/eventBus";
-
-export type UserRole = "user" | "admin" | "moderator";
-
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-}
+import { User } from "../types";
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
+  isLoading: boolean;
   login: (formData: FormData) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -44,29 +37,48 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const [token, setToken] = useState<string | null>(
     localStorage.getItem("authToken"),
   );
+  const [isLoading, setIsLoading] = useState(true);
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem("authToken");
+  const logout = async () => {
+    try {
+      await api.post("/logout");
+    } catch (error) {
+      console.error("Logout API call failed:", error);
+    } finally {
+      setUser(null);
+      setToken(null);
+      localStorage.removeItem("authToken");
+    }
   };
 
   useEffect(() => {
     setupInterceptors();
-
     const handleLogoutEvent = () => logout();
-
     eventBus.on("logout", handleLogoutEvent);
-
-    if (token) {
-      const decodedUser = decodeToken(token);
-      if (decodedUser) setUser(decodedUser);
-      else logout();
-    }
 
     return () => {
       eventBus.remove("logout", handleLogoutEvent);
     };
+  }, []);
+
+  useEffect(() => {
+    try {
+      if (token) {
+        const decodedUser = decodeToken(token);
+        if (decodedUser) {
+          setUser(decodedUser);
+        } else {
+          logout();
+        }
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error("Auth check failed:", error);
+      logout();
+    } finally {
+      setIsLoading(false);
+    }
   }, [token]);
 
   const login = async (formData: FormData) => {
@@ -95,8 +107,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
-      {children}
+    <AuthContext.Provider value={{ user, token, isLoading, login, logout }}>
+      {!isLoading && children}
     </AuthContext.Provider>
   );
 };

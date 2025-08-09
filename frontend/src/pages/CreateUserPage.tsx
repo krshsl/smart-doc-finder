@@ -1,9 +1,17 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, Fragment } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import LoadingOverlay from "../components/LoadingOverlay";
-import Modal from "../components/Modal";
+import { Listbox, Transition } from "@headlessui/react";
+import { CheckIcon, ChevronUpDownIcon } from "@heroicons/react/20/solid";
+import { LoadingOverlay } from "../components/LoadingOverlay";
+import { Modal } from "../components/Modal";
 import api from "../services/api";
 import { useAuth } from "../auth/AuthContext";
+
+const roles = [
+  { value: "user", name: "User" },
+  { value: "moderator", name: "Moderator" },
+  { value: "admin", name: "Admin" },
+];
 
 const CreateUserPage: React.FC = () => {
   const { user } = useAuth();
@@ -12,6 +20,7 @@ const CreateUserPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
+  const [selectedRole, setSelectedRole] = useState(roles[0]);
   const formRef = useRef<HTMLFormElement>(null);
 
   const isPublicSignUp = !user;
@@ -28,14 +37,14 @@ const CreateUserPage: React.FC = () => {
       username: data.username,
       email: data.email,
       password: data.password,
-      role: data.role || "user",
+      role: selectedRole.value,
     };
 
     try {
       await api.post("/user", payload);
       setModalMessage(`Account for ${data.email} created successfully!`);
-      formRef.current?.reset();
       setIsModalOpen(true);
+      formRef.current?.reset();
     } catch (err: any) {
       if (err.response && err.response.data) {
         const errorData = err.response.data;
@@ -120,22 +129,58 @@ const CreateUserPage: React.FC = () => {
 
         {user?.role === "admin" && (
           <div className="mb-6">
-            <label
-              className="mb-2 block font-medium text-gray-700"
-              htmlFor="role"
-            >
-              Role
-            </label>
-            <select
-              id="role"
-              name="role"
-              defaultValue="user"
-              className="w-full rounded-lg border border-gray-300 p-3 bg-white"
-            >
-              <option value="user">User</option>
-              <option value="moderator">Moderator</option>
-              <option value="admin">Admin</option>
-            </select>
+            <Listbox value={selectedRole} onChange={setSelectedRole}>
+              <div className="relative mt-1">
+                <Listbox.Label className="mb-2 block font-medium text-gray-700">
+                  Role
+                </Listbox.Label>
+                <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white py-3 pl-3 pr-10 text-left border border-gray-300">
+                  <span className="block truncate">{selectedRole.name}</span>
+                  <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                    <ChevronUpDownIcon
+                      className="h-5 w-5 text-gray-400"
+                      aria-hidden="true"
+                    />
+                  </span>
+                </Listbox.Button>
+                <Transition
+                  as={Fragment}
+                  leave="transition ease-in duration-100"
+                  leaveFrom="opacity-100"
+                  leaveTo="opacity-0"
+                >
+                  <Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                    {roles.map((role) => (
+                      <Listbox.Option
+                        key={role.value}
+                        className={({ active }) =>
+                          `relative cursor-default select-none py-2 pl-10 pr-4 ${active ? "bg-blue-100 text-blue-900" : "text-gray-900"}`
+                        }
+                        value={role}
+                      >
+                        {({ selected }) => (
+                          <>
+                            <span
+                              className={`block truncate ${selected ? "font-medium" : "font-normal"}`}
+                            >
+                              {role.name}
+                            </span>
+                            {selected ? (
+                              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-blue-600">
+                                <CheckIcon
+                                  className="h-5 w-5"
+                                  aria-hidden="true"
+                                />
+                              </span>
+                            ) : null}
+                          </>
+                        )}
+                      </Listbox.Option>
+                    ))}
+                  </Listbox.Options>
+                </Transition>
+              </div>
+            </Listbox>
           </div>
         )}
 

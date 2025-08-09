@@ -3,7 +3,8 @@ from pydantic import BaseModel, EmailStr, Field, ValidationError, validator
 from bson import ObjectId
 
 import src.utils.auth as auth
-from src.models.user import User, USER_LIMIT
+from src.models import User
+from src.utils.constants import USER_LIMIT
 
 router = APIRouter()
 
@@ -30,7 +31,7 @@ async def create_user(
     data: UserCreateRequest,
     token=Depends(auth.verify_access_token_optional)
 ):
-    token_data, current_user = token
+    token_data, current_user = token if token else None, None
     count = await User.count()
     if count == USER_LIMIT:
         raise HTTPException(
@@ -100,7 +101,10 @@ async def delete_user(
 
     try:
         await user.delete()
-    except Exception:
-        raise HTTPException(status_code=500, detail="Error while deleting current user")
+    except Exception as e:
+        from src import logger
+
+        logger.error(e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error while deleting current user")
 
     return {"message": "User and all associated data have been successfully deleted"}

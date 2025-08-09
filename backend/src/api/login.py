@@ -18,7 +18,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     token_str = await auth._create_access_token(user)
     return {"access_token": token_str, "token_type": "bearer"}
 
-@router.get("/logout", status_code=status.HTTP_200_OK)
+@router.post("/logout", status_code=status.HTTP_200_OK)
 async def logout(
     token=Depends(auth.verify_access_token)
 ):

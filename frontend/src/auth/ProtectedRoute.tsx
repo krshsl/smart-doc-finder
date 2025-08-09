@@ -1,6 +1,7 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
-import { useAuth, UserRole } from "./AuthContext";
+import { useAuth } from "./AuthContext";
+import { UserRole } from "../types";
 
 const UnauthorizedPage = () => (
   <div className="flex h-screen items-center justify-center">

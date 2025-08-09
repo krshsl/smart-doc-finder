@@ -1,10 +1,11 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from pydantic import BaseModel, constr
 from bson import ObjectId
+from bson.dbref import DBRef
 
 import src.utils.auth as auth
-from src.models.user import DEFAULT_FOLDER
-from src.models.folder import Folder, FOLDER_SIZE
+from src.models import User, Folder
+from src.utils.constants import META_DATA_SIZE, DEFAULT_FOLDER, STORAGE_QUOTA
 
 router = APIRouter()
 
@@ -12,7 +13,7 @@ class FolderCreateRequest(BaseModel):
     name: constr(min_length=1)
     parent_folder_id: str | None = None
 
-@router.post("/folders", status_code=status.HTTP_201_CREATED)
+@router.post("/folder", status_code=status.HTTP_201_CREATED)
 async def add_folder(
     data: FolderCreateRequest,
     token=Depends(auth.verify_access_token)
@@ -21,13 +22,17 @@ async def add_folder(
     if data.parent_folder_id:
         parent = await Folder.get(data.parent_folder_id)
     else:
-        parent = await Folder.find_one(Folder.name == DEFAULT_FOLDER, Folder.parent == None, Folder.owner == current_user.id)
+        parent = await Folder.find_one(Folder.name == DEFAULT_FOLDER, Folder.owner == DBRef(User.__name__, current_user.id), Folder.parent == None)
 
     if not parent:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Parent Folder not found")
 
-    new_usage = current_user.used_storage + FOLDER_SIZE
-    if new_usage > current_user.storage_quota:
+    user = await parent.owner.fetch()
+    if not user or user.id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+    new_usage = current_user.used_storage + META_DATA_SIZE
+    if new_usage > STORAGE_QUOTA:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Storage quota exceeded")
 
     new_folder = Folder(
@@ -42,7 +47,51 @@ async def add_folder(
 
     return {"message": "Folder has been created successfully", "folder_id": str(new_folder.id)}
 
-@router.get("/folders/{folder_id}", status_code=status.HTTP_200_OK)
+class RenameRequest(BaseModel):
+    name: constr(min_length=1)
+
+@router.post("/folder/edit/{folder_id}", status_code=status.HTTP_200_OK)
+async def edit_file(
+    folder_id: str,
+    payload: RenameRequest,
+    token=Depends(auth.verify_access_token)
+):
+    token_data, current_user = token
+    folder = await Folder.get(ObjectId(folder_id))
+    if not folder:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found")
+
+    owner = await folder.owner.fetch()
+    if owner.id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+    try:
+        folder.name = payload.name
+        await folder.save()
+
+        return {"message": "Folder has been renamed successfully"}
+    except Exception as e:
+        from src import logger
+
+        logger.error(e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error while renaming file")
+
+@router.get("/folder", status_code=status.HTTP_200_OK)
+async def get_default_folder(
+    token=Depends(auth.verify_access_token)
+):
+    token_data, current_user = token
+    folder = await Folder.find_one(Folder.name == DEFAULT_FOLDER, Folder.owner == DBRef(User.__name__, current_user.id), Folder.parent == None)
+    if not folder:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found")
+
+    owner = await folder.owner.fetch()
+    if owner.id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+    return await folder._to_dict(include_refs=True)
+
+@router.get("/folder/{folder_id}", status_code=status.HTTP_200_OK)
 async def get_folder_contents(
     folder_id: str,
     token=Depends(auth.verify_access_token)
@@ -52,12 +101,13 @@ async def get_folder_contents(
     if not folder:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found")
 
-    if folder.owner.id != current_user.id:
+    owner = await folder.owner.fetch()
+    if owner.id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
-    return await folder._to_dict(include_refs=True)
+    return await folder._to_dict(include_refs=True, include_parents=True)
 
-@router.delete("/folders/{folder_id}", status_code=status.HTTP_200_OK)
+@router.delete("/folder/{folder_id}", status_code=status.HTTP_200_OK)
 async def delete_folder(
     folder_id: str,
     token=Depends(auth.verify_access_token)
@@ -67,12 +117,19 @@ async def delete_folder(
     if not folder:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found")
 
-    if folder.owner.id != current_user.id:
+    owner = await folder.owner.fetch()
+    if owner.id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    if folder.name == DEFAULT_FOLDER and folder.parent == None:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
     try:
         await folder.delete()
-    except Exception:
-        raise HTTPException(status_code=500, detail="Error deleting folder from storage")
+    except Exception as e:
+        from src import logger
+
+        logger.error(e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error deleting folder from storage")
 
     return {"message": "Folder and all associated contents have been successfully deleted"}

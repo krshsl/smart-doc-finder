@@ -1,5 +1,7 @@
+import logging
 from os import getenv
 from sys import exit
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from dotenv import load_dotenv
@@ -7,11 +9,10 @@ from dotenv import load_dotenv
 from .client import init_db
 from .api import routes
 
-app = FastAPI()
-app.include_router(routes)
+logger = logging.getLogger("uvicorn")
 
-@app.on_event("startup")
-async def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     load_dotenv("dev.env")
 
     _uri = getenv("URI")
@@ -21,7 +22,15 @@ async def startup_event():
     _algo = getenv("ALGORITHM")
 
     if not all([_uri, _pwd, _db, _secret_key, _algo]):
-        print("Error: One or more required environment variables are missing.")
+        logger.error("Error: One or more required environment variables are missing.")
         exit(1)
 
     await init_db(_uri.replace("<db_password>", _pwd), _db)
+    logger.info("Database initialized successfully.")
+    yield
+
+    logger.info("Application shutting down.")
+
+
+app = FastAPI(lifespan=lifespan)
+app.include_router(routes)
