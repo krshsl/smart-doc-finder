@@ -15,7 +15,7 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   login: (formData: FormData) => Promise<void>;
-  logout: () => Promise<void>;
+  logout: (skipApiCall?: boolean) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -39,17 +39,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   );
   const [isLoading, setIsLoading] = useState(true);
 
-  const logout = async () => {
-    try {
-      await api.post("/logout");
-    } catch (error) {
-      console.error("Logout API call failed:", error);
-    } finally {
-      setUser(null);
-      setToken(null);
-      localStorage.removeItem("authToken");
-      eventBus.dispatch("userUpdate", null);
+  const logout = async (skipApiCall: boolean = false) => {
+    if (!skipApiCall) {
+      try {
+        await api.post("/logout");
+      } catch (error) {
+        console.error("Logout API call failed:", error);
+      }
     }
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem("authToken");
+    eventBus.dispatch("userUpdate", null);
   };
 
   useEffect(() => {

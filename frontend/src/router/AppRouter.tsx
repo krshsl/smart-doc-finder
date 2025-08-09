@@ -1,16 +1,16 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
-import LoginPage from "../pages/LoginPage";
-import CreateUserPage from "../pages/CreateUserPage";
-import DashboardLayout from "../layouts/DashboardLayout";
-import MyCloudPage from "../pages/MyCloudPage";
-import UploadFilesPage from "../pages/UploadFilesPage";
-import SettingsPage from "../pages/SettingsPage";
-import SearchPage from "../pages/SearchPage";
-
 import { GuestRoute } from "../auth/GuestRoute";
 import { ProtectedRoute } from "../auth/ProtectedRoute";
+import DashboardLayout from "../layouts/DashboardLayout";
+import UserFormPage from "../pages/UserFormPage";
+import LoginPage from "../pages/LoginPage";
+import MyCloudPage from "../pages/MyCloudPage";
+import SearchPage from "../pages/SearchPage";
+import SettingsPage from "../pages/SettingsPage";
+import UploadFilesPage from "../pages/UploadFilesPage";
+import UsersPage from "../pages/UsersPage";
 
 const AppRouter: React.FC = () => {
   return (
@@ -27,7 +27,7 @@ const AppRouter: React.FC = () => {
         path="/create-user"
         element={
           <GuestRoute>
-            <CreateUserPage />
+            <UserFormPage />
           </GuestRoute>
         }
       />
@@ -48,11 +48,35 @@ const AppRouter: React.FC = () => {
             path="create-user"
             element={
               <ProtectedRoute allowedRoles={["admin"]}>
-                <CreateUserPage />
+                <UserFormPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="edit-profile"
+            element={
+              <ProtectedRoute allowedRoles={["user", "admin"]}>
+                <UserFormPage />
               </ProtectedRoute>
             }
           />
         </Route>
+        <Route
+          path="users"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <UsersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="users/edit/:userId"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <UserFormPage />
+            </ProtectedRoute>
+          }
+        />
       </Route>
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>

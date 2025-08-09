@@ -5,7 +5,7 @@ interface LoadingOverlayProps {
 }
 
 export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
-  isLoading,
+  isLoading
 }) => {
   if (!isLoading) {
     return null;

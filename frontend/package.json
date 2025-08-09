@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "echo \"Replace with test runner (e.g., Vitest or Jest)\""
+    "test": "echo \"Replace with test runner (e.g., Vitest or Jest)\"",
+    "fix": "eslint --fix ."
   },
   "dependencies": {
     "@headlessui/react": "^2.2.7",
@@ -24,12 +25,18 @@
     "axios": "^1.11.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-dropzone": "^14.3.8",
     "react-router-dom": "^7.7.1",
     "tailwindcss": "^4.1.11",
     "typescript": "^4.9.5"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.39.0",
+    "@typescript-eslint/parser": "^8.39.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "eslint": "^9.33.0",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-unused-imports": "^4.1.4",
     "vite": "^7.1.0"
   }
 }

@@ -33,16 +33,18 @@ class User(BaseDocument):
     async def _delete_tokens(self):
         from .token import JWTToken
 
-        await JWTToken.find(JWTToken.user == DBRef(User.__name__, self.id)).delete()
+        await JWTToken.find(
+            JWTToken.user == DBRef(User.__name__, self.id)
+        ).delete_many()
 
     async def _delete_default_folder(self):
         from .folder import Folder
 
-        await self.delete_one(
+        await Folder.find_one(
             Folder.name == DEFAULT_FOLDER,
-            Folder.parent is None,
+            Folder.parent == None,
             Folder.owner == DBRef(User.__name__, self.id),
-        )
+        ).delete()  # only this triggers cascade delete?
 
     async def _to_dict(self):
         return {

@@ -1,11 +1,11 @@
-import React, { useState, useEffect, Fragment } from "react";
 import {
   Dialog,
   DialogPanel,
   DialogTitle,
   Transition,
-  TransitionChild,
+  TransitionChild
 } from "@headlessui/react";
+import React, { useState, useEffect, Fragment } from "react";
 
 interface RenameModalProps {
   isOpen: boolean;
@@ -18,7 +18,7 @@ export const RenameModal: React.FC<RenameModalProps> = ({
   isOpen,
   onClose,
   onSave,
-  currentItem,
+  currentItem
 }) => {
   const [name, setName] = useState("");
 

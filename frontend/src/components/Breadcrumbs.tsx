@@ -1,6 +1,6 @@
+import { ChevronRightIcon, HomeIcon } from "@heroicons/react/20/solid";
 import React from "react";
 import { Link } from "react-router-dom";
-import { ChevronRightIcon, HomeIcon } from "@heroicons/react/20/solid";
 
 import { Breadcrumb } from "../types";
 

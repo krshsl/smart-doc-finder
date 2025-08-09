@@ -1,6 +1,6 @@
+import { FolderIcon, DocumentIcon } from "@heroicons/react/24/solid";
 import React, { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { FolderIcon, DocumentIcon } from "@heroicons/react/24/solid";
 
 import api from "../services/api";
 import { FileItem, FolderItem } from "../types";
@@ -18,7 +18,7 @@ const SearchPage: React.FC = () => {
 
   useEffect(() => {
     if (query) {
-      const fetchResults = async () => {
+      const fetchResults = async() => {
         setIsLoading(true);
         try {
           const response = await api.get(`/search?q=${query}`);
@@ -39,7 +39,7 @@ const SearchPage: React.FC = () => {
 
   const handleItemClick = (
     item: FileItem | FolderItem,
-    type: "file" | "folder",
+    type: "file" | "folder"
   ) => {
     if (type === "folder") {
       navigate(`/my-cloud/${item.id}`);

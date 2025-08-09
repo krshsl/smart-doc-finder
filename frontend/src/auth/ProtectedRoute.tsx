@@ -1,8 +1,9 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
 
-import { useAuth } from "./AuthContext";
 import { UserRole } from "../types";
+
+import { useAuth } from "./AuthContext";
 
 const UnauthorizedPage = () => (
   <div className="flex h-screen items-center justify-center">
@@ -17,7 +18,7 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
-  allowedRoles,
+  allowedRoles
 }) => {
   const { user } = useAuth();
 

@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
-import { LoadingOverlay } from "../components/LoadingOverlay";
 import { useAuth } from "../auth/AuthContext";
+import { LoadingOverlay } from "../components/LoadingOverlay";
 import { guestUser } from "../config";
 
 const LoginPage: React.FC = () => {
@@ -12,7 +12,7 @@ const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [hasLoginFailed, setHasLoginFailed] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async(e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
@@ -30,7 +30,7 @@ const LoginPage: React.FC = () => {
     }
   };
 
-  const handleGuestLogin = async () => {
+  const handleGuestLogin = async() => {
     setIsLoading(true);
     setError(null);
     try {

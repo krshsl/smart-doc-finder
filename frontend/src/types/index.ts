@@ -7,6 +7,14 @@ export interface User {
   role?: UserRole;
 }
 
+export interface PaginatedUsersResponse {
+  items: User[];
+  total: number;
+  page: number;
+  pages: number;
+  size: number;
+}
+
 export interface FileItem {
   id: string;
   file_name: string;

@@ -1,16 +1,16 @@
+import { FolderIcon, DocumentIcon, PlusIcon } from "@heroicons/react/24/solid";
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { FolderIcon, DocumentIcon, PlusIcon } from "@heroicons/react/24/solid";
 
-import { ContextMenu } from "../components/ContextMenu";
-import { RenameModal } from "../components/RenameModal";
-import { CreateItemModal } from "../components/CreateItemModal";
+import { useAuth } from "../auth/AuthContext";
 import { Breadcrumbs } from "../components/Breadcrumbs";
+import { ConfirmationModal } from "../components/ConfirmationModal";
+import { ContextMenu } from "../components/ContextMenu";
+import { CreateItemModal } from "../components/CreateItemModal";
 import { FileViewerModal } from "../components/FileViewerModal";
 import { LoadingOverlay } from "../components/LoadingOverlay";
 import { Modal } from "../components/Modal";
-
-import { useAuth } from "../auth/AuthContext";
+import { RenameModal } from "../components/RenameModal";
 import api from "../services/api";
 import { FolderData, Breadcrumb, FolderItem, FileItem } from "../types";
 
@@ -39,6 +39,11 @@ const MyCloudPage: React.FC = () => {
     item: any;
     type: "file" | "folder";
   } | null>(null);
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    item: any;
+    type: "file" | "folder";
+  } | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [filePreview, setFilePreview] = useState<{
     url: string;
@@ -50,7 +55,7 @@ const MyCloudPage: React.FC = () => {
     message: string;
   } | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = async() => {
     setIsLoading(true);
     try {
       const endpoint = folderId ? `/folder/${folderId}` : "/folder";
@@ -61,7 +66,7 @@ const MyCloudPage: React.FC = () => {
       console.error("Failed to fetch folder data:", error);
       setErrorModal({
         isOpen: true,
-        message: "Could not load your files. Please try again later.",
+        message: "Could not load your files. Please try again later."
       });
     }
     setIsLoading(false);
@@ -71,9 +76,9 @@ const MyCloudPage: React.FC = () => {
     fetchData();
   }, [folderId]);
 
-  const handleOpen = async (
+  const handleOpen = async(
     item: FileItem | FolderItem,
-    type: "file" | "folder",
+    type: "file" | "folder"
   ) => {
     if (type === "folder") {
       navigate(`/my-cloud/${item.id}`);
@@ -81,13 +86,13 @@ const MyCloudPage: React.FC = () => {
       setIsActionLoading(true);
       try {
         const response = await api.get(`/file/${item.id}`, {
-          responseType: "blob",
+          responseType: "blob"
         });
         const fileURL = URL.createObjectURL(response.data);
         setFilePreview({
           url: fileURL,
           type: item.file_type,
-          name: item.file_name,
+          name: item.file_name
         });
       } catch (error) {
         console.error("Failed to fetch file for preview:", error);
@@ -98,22 +103,24 @@ const MyCloudPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (item: any, type: "file" | "folder") => {
-    if (
-      window.confirm(
-        `Are you sure you want to delete ${type === "file" ? item.file_name : item.name}?`,
-      )
-    ) {
-      try {
-        await api.delete(`/${type}/${item.id}`);
-        fetchData();
-      } catch (error) {
-        console.error(`Failed to delete ${type}:`, error);
-        setErrorModal({
-          isOpen: true,
-          message: `Could not delete the ${type}.`,
-        });
-      }
+  const handleDeleteRequest = (item: any, type: "file" | "folder") => {
+    setDeleteModal({ isOpen: true, item, type });
+  };
+
+  const confirmDelete = async() => {
+    if (!deleteModal?.item) return;
+    const { item, type } = deleteModal;
+    try {
+      await api.delete(`/${type}/${item.id}`);
+      fetchData();
+    } catch (error) {
+      console.error(`Failed to delete ${type}:`, error);
+      setErrorModal({
+        isOpen: true,
+        message: `Could not delete the ${type}.`
+      });
+    } finally {
+      setDeleteModal({ isOpen: false, item: null, type: "file" });
     }
   };
 
@@ -121,30 +128,30 @@ const MyCloudPage: React.FC = () => {
     setRenameModal({ isOpen: true, item, type });
   };
 
-  const handleSaveRename = async (newName: string) => {
+  const handleSaveRename = async(newName: string) => {
     if (!renameModal || !renameModal.item) return;
     try {
       await api.post(`/${renameModal.type}/edit/${renameModal.item.id}`, {
-        name: newName,
+        name: newName
       });
       fetchData();
     } catch (error) {
       console.error(`Failed to rename ${renameModal.type}:`, error);
       setErrorModal({
         isOpen: true,
-        message: `Could not rename the ${renameModal.type}.`,
+        message: `Could not rename the ${renameModal.type}.`
       });
     }
   };
 
-  const handleSaveFolder = async (name: string) => {
+  const handleSaveFolder = async(name: string) => {
     setIsActionLoading(true);
     try {
       const payload = { name, parent_folder_id: folderData?.id || null };
-      await api.post(`/folder`, payload);
+      await api.post("/folder", payload);
       fetchData();
     } catch (error: any) {
-      console.error(`Failed to create folder:`, error);
+      console.error("Failed to create folder:", error);
       const message =
         error.response?.data?.detail || "Could not create the folder.";
       setErrorModal({ isOpen: true, message });
@@ -153,7 +160,7 @@ const MyCloudPage: React.FC = () => {
     }
   };
 
-  const handleUploadFile = async (file: File) => {
+  const handleUploadFile = async(file: File) => {
     setIsActionLoading(true);
     const formData = new FormData();
     formData.append("file", file);
@@ -163,7 +170,7 @@ const MyCloudPage: React.FC = () => {
     }
     try {
       await api.post("/file", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: { "Content-Type": "multipart/form-data" }
       });
       fetchData();
     } catch (error: any) {
@@ -195,7 +202,7 @@ const MyCloudPage: React.FC = () => {
                 key={folder.id}
                 onOpen={() => handleOpen(folder, "folder")}
                 onRename={() => handleRename(folder, "folder")}
-                onDelete={() => handleDelete(folder, "folder")}
+                onDelete={() => handleDeleteRequest(folder, "folder")}
               >
                 <div
                   className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-transparent bg-white p-4 text-center shadow-sm transition-all hover:border-blue-500 hover:shadow-md"
@@ -213,7 +220,7 @@ const MyCloudPage: React.FC = () => {
                 key={file.id}
                 onOpen={() => handleOpen(file, "file")}
                 onRename={() => handleRename(file, "file")}
-                onDelete={() => handleDelete(file, "file")}
+                onDelete={() => handleDeleteRequest(file, "file")}
               >
                 <div
                   className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-transparent bg-white p-4 text-center shadow-sm transition-all hover:border-blue-500 hover:shadow-md"
@@ -246,12 +253,12 @@ const MyCloudPage: React.FC = () => {
         currentItem={
           renameModal?.item
             ? {
-                id: renameModal.item.id,
-                name:
+              id: renameModal.item.id,
+              name:
                   renameModal.type === "file"
                     ? renameModal.item.file_name
-                    : renameModal.item.name,
-              }
+                    : renameModal.item.name
+            }
             : null
         }
       />
@@ -274,6 +281,15 @@ const MyCloudPage: React.FC = () => {
       >
         {errorModal?.message}
       </Modal>
+      <ConfirmationModal
+        isOpen={deleteModal?.isOpen || false}
+        onClose={() => setDeleteModal(null)}
+        onConfirm={confirmDelete}
+        title={`Delete ${deleteModal?.type}`}
+      >
+        Are you sure you want to delete this {deleteModal?.type}? This action
+        cannot be undone.
+      </ConfirmationModal>
     </div>
   );
 };

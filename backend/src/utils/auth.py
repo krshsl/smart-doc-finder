@@ -112,12 +112,14 @@ async def verify_access_token(
 async def verify_access_token_exclude_guests(
     credentials: Optional[HTTPAuthorizationCredentials] = Security(security),
 ) -> Optional[Tuple[JWTToken, User]]:
-    token_data, current_user = verify_access_token(credentials=credentials)
+    token_data, current_user = await verify_access_token(credentials=credentials)
 
-    if current_user.roles == ["guest"]:
+    if not current_user or current_user.role == ["guest"]:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized"
         )
+
+    return token_data, current_user
 
 
 async def verify_access_token_optional(

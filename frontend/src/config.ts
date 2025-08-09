@@ -4,5 +4,5 @@ export const API_BASE_URL = isDevelopment ? "/api" : "https://api.myapp.com"; //
 
 export const guestUser = {
   username: "guest",
-  password: "password",
+  password: "password"
 };

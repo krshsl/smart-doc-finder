@@ -6,6 +6,11 @@ from pydantic import BaseModel, constr
 import src.utils.auth as auth
 from src.models import Folder, User
 from src.utils.constants import DEFAULT_FOLDER, META_DATA_SIZE, STORAGE_QUOTA
+from src.utils.exceptions import (
+    raise_access_denied,
+    raise_not_found,
+    raise_storage_exceeded,
+)
 
 router = APIRouter()
 
@@ -30,19 +35,15 @@ async def add_folder(
         )
 
     if not parent:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Parent Folder not found"
-        )
+        raise_not_found(Folder.__name__)
 
     user = await parent.owner.fetch()
     if not user or user.id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+        raise_access_denied()
 
     new_usage = current_user.used_storage + META_DATA_SIZE
     if new_usage > STORAGE_QUOTA:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Storage quota exceeded"
-        )
+        raise_storage_exceeded()
 
     new_folder = Folder(name=data.name, owner=current_user, parent=parent)
 
@@ -69,13 +70,11 @@ async def edit_file(
     token_data, current_user = token
     folder = await Folder.get(ObjectId(folder_id))
     if not folder:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found"
-        )
+        raise_not_found(Folder.__name__)
 
     owner = await folder.owner.fetch()
     if owner.id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+        raise_access_denied()
 
     try:
         folder.name = payload.name
@@ -85,7 +84,7 @@ async def edit_file(
     except Exception as e:
         from src import logger
 
-        logger.error(e)
+        logger.error(e, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error while renaming file",
@@ -98,16 +97,14 @@ async def get_default_folder(token=Depends(auth.verify_access_token)):
     folder = await Folder.find_one(
         Folder.name == DEFAULT_FOLDER,
         Folder.owner == DBRef(User.__name__, current_user.id),
-        Folder.parent is None,
+        Folder.parent == None,
     )
     if not folder:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found"
-        )
+        raise_not_found(Folder.__name__)
 
     owner = await folder.owner.fetch()
     if owner.id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+        raise_access_denied()
 
     return await folder._to_dict(include_refs=True)
 
@@ -117,15 +114,11 @@ async def get_folder_contents(folder_id: str, token=Depends(auth.verify_access_t
     token_data, current_user = token
     folder = await Folder.get(ObjectId(folder_id))
     if not folder:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found"
-        )
+        raise_not_found(Folder.__name__)
 
     owner = await folder.owner.fetch()
     if owner.id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
-        )
+        raise_access_denied()
 
     return await folder._to_dict(include_refs=True, include_parents=True)
 
@@ -137,27 +130,21 @@ async def delete_folder(
     token_data, current_user = token
     folder = await Folder.get(ObjectId(folder_id))
     if not folder:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found"
-        )
+        raise_not_found(Folder.__name__)
 
     owner = await folder.owner.fetch()
     if owner.id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
-        )
+        raise_access_denied()
 
     if folder.name == DEFAULT_FOLDER and folder.parent is None:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
-        )
+        raise_access_denied()
 
     try:
         await folder.delete()
     except Exception as e:
         from src import logger
 
-        logger.error(e)
+        logger.error(e, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error deleting folder from storage",

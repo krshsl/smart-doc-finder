@@ -13,6 +13,11 @@ import src.utils.auth as auth
 from src.client import get_fs
 from src.models import File, Folder, User
 from src.utils.constants import DEFAULT_FOLDER, META_DATA_SIZE, STORAGE_QUOTA
+from src.utils.exceptions import (
+    raise_access_denied,
+    raise_not_found,
+    raise_storage_exceeded,
+)
 
 router = APIRouter()
 
@@ -33,17 +38,15 @@ async def add_file(
         folder = await Folder.find_one(
             Folder.name == DEFAULT_FOLDER,
             Folder.owner == DBRef(User.__name__, current_user.id),
-            Folder.parent is None,
+            Folder.parent == None,
         )
 
     if not folder:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found"
-        )
+        raise_not_found(Folder.__name__)
 
     user = await folder.owner.fetch()
     if not user or user.id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+        raise_access_denied()
 
     contents = await file.read()
     file_obj = BytesIO(contents)
@@ -68,9 +71,7 @@ async def add_file(
 
     new_usage = current_user.used_storage + file_size
     if new_usage > STORAGE_QUOTA:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Storage quota exceeded"
-        )
+        raise_storage_exceeded()
 
     gridfs_id = None
     try:
@@ -101,7 +102,7 @@ async def add_file(
 
         if gridfs_id:
             await fs.delete(gridfs_id)
-        logger.error(e)
+        logger.error(e, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
         )
@@ -121,13 +122,11 @@ async def edit_file(
     token_data, current_user = token
     file_doc = await File.get(ObjectId(file_id))
     if not (file_doc and file_doc.gridfs_id):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="File not found"
-        )
+        raise_not_found(File.__name__)
 
     owner = await file_doc.owner.fetch()
     if owner.id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+        raise_access_denied()
 
     try:
         await fs.rename(ObjectId(file_doc.gridfs_id), payload.name)
@@ -139,7 +138,7 @@ async def edit_file(
     except Exception as e:
         from src import logger
 
-        logger.error(e)
+        logger.error(e, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error while renaming file",
@@ -153,13 +152,11 @@ async def get_file(
     token_data, current_user = token
     file_doc = await File.get(ObjectId(file_id))
     if not (file_doc and file_doc.gridfs_id):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="File not found"
-        )
+        raise_not_found(File.__name__)
 
     owner = await file_doc.owner.fetch()
     if owner.id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+        raise_access_denied()
 
     buffer = BytesIO()
     try:
@@ -168,7 +165,7 @@ async def get_file(
     except Exception as e:
         from src import logger
 
-        logger.error(e)
+        logger.error(e, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error while loading file",
@@ -193,20 +190,18 @@ async def delete_file(
     token_data, current_user = token
     file_doc = await File.get(ObjectId(file_id))
     if not (file_doc and file_doc.gridfs_id):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="File not found"
-        )
+        raise_not_found(File.__name__)
 
     owner = await file_doc.owner.fetch()
     if owner.id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+        raise_access_denied()
 
     try:
         await file_doc.delete()
     except Exception as e:
         from src import logger
 
-        logger.error(e)
+        logger.error(e, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error deleting file from storage",
