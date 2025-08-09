@@ -1,5 +1,5 @@
-from os import path, listdir
 from importlib import import_module
+from os import listdir, path
 
 from fastapi import APIRouter
 

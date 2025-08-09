@@ -34,7 +34,7 @@ const AppRouter: React.FC = () => {
       <Route
         path="/"
         element={
-          <ProtectedRoute allowedRoles={["user", "admin", "moderator"]}>
+          <ProtectedRoute allowedRoles={["user", "admin", "guest"]}>
             <DashboardLayout />
           </ProtectedRoute>
         }

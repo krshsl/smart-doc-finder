@@ -23,11 +23,13 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
       to: "/my-cloud",
       label: "My cloud",
       icon: <CloudIcon className="h-6 w-6" />,
+      show: true,
     },
     {
       to: "/upload-files",
       label: "Upload files",
       icon: <CloudArrowUpIcon className="h-6 w-6" />,
+      show: user.role !== "guest",
     },
   ];
 
@@ -52,14 +54,16 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
 
       <nav className="mt-8 flex-1">
         <ul className="space-y-2">
-          {navItems.map((item) => (
-            <li key={item.to}>
-              <NavLink to={item.to} className={getLinkClass}>
-                {item.icon}
-                <span className="ml-4">{item.label}</span>
-              </NavLink>
-            </li>
-          ))}
+          {navItems
+            .filter((item) => item.show)
+            .map((item) => (
+              <li key={item.to}>
+                <NavLink to={item.to} className={getLinkClass}>
+                  {item.icon}
+                  <span className="ml-4">{item.label}</span>
+                </NavLink>
+              </li>
+            ))}
         </ul>
       </nav>
 

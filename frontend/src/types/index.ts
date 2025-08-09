@@ -1,10 +1,10 @@
-export type UserRole = "user" | "admin" | "moderator";
+export type UserRole = "user" | "admin" | "guest";
 
 export interface User {
-  id: string;
+  id?: string;
   name: string;
   email: string;
-  role: UserRole;
+  role?: UserRole;
 }
 
 export interface FileItem {

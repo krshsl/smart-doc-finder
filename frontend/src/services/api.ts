@@ -1,7 +1,11 @@
-import axios from "axios";
-
+import axios, { AxiosError } from "axios";
 import { API_BASE_URL } from "../config";
 import eventBus from "./eventBus";
+
+let userRole: string | null = null;
+eventBus.on("userUpdate", (user) => {
+  userRole = user ? user.role : null;
+});
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -13,6 +17,19 @@ export const setupInterceptors = () => {
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    const allowGuest = (config as any).allowGuest || false;
+
+    if (userRole === "guest" && !allowGuest) {
+      console.warn("Guest action blocked by API layer.");
+      return Promise.reject(
+        new AxiosError(
+          "Guests are not allowed to perform this action.",
+          "ERR_FORBIDDEN",
+        ),
+      );
+    }
+
     return config;
   });
 

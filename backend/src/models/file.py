@@ -1,11 +1,13 @@
-from typing import Optional, List
-from beanie import Link, Delete, before_event
-from pydantic import Field
+from typing import List, Optional
+
+from beanie import Delete, Link, before_event
 from bson import ObjectId
+from pydantic import Field
 
 from .baseDocument import BaseDocument
 from .folder import Folder
 from .user import User
+
 
 class File(BaseDocument):
     file_name: str
@@ -31,5 +33,5 @@ class File(BaseDocument):
             "file_type": self.file_type,
             "file_size": self.file_size,
             "tags": self.tags,
-            "gridfs_id": str(self.gridfs_id)
+            "gridfs_id": str(self.gridfs_id),
         }

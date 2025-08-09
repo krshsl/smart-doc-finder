@@ -11,7 +11,7 @@ import api from "../services/api";
 
 const roles = [
   { value: "user", name: "User" },
-  { value: "moderator", name: "Moderator" },
+  { value: "guest", name: "Guest" },
   { value: "admin", name: "Admin" },
 ];
 

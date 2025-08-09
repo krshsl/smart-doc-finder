@@ -48,6 +48,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       setUser(null);
       setToken(null);
       localStorage.removeItem("authToken");
+      eventBus.dispatch("userUpdate", null);
     }
   };
 
@@ -67,11 +68,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         const decodedUser = decodeToken(token);
         if (decodedUser) {
           setUser(decodedUser);
+          eventBus.dispatch("userUpdate", decodedUser);
         } else {
           logout();
         }
       } else {
         setUser(null);
+        eventBus.dispatch("userUpdate", null);
       }
     } catch (error) {
       console.error("Auth check failed:", error);

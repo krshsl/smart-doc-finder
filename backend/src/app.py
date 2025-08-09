@@ -1,15 +1,16 @@
 import logging
+from contextlib import asynccontextmanager
 from os import getenv
 from sys import exit
-from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
 from dotenv import load_dotenv
+from fastapi import FastAPI
 
-from .client import init_db
 from .api import routes
+from .client import init_db
 
 logger = logging.getLogger("uvicorn")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

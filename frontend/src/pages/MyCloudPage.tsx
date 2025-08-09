@@ -10,6 +10,7 @@ import { FileViewerModal } from "../components/FileViewerModal";
 import { LoadingOverlay } from "../components/LoadingOverlay";
 import { Modal } from "../components/Modal";
 
+import { useAuth } from "../auth/AuthContext";
 import api from "../services/api";
 import { FolderData, Breadcrumb, FolderItem, FileItem } from "../types";
 
@@ -27,6 +28,7 @@ const buildBreadcrumbs = (currentFolder: FolderData | null): Breadcrumb[] => {
 const MyCloudPage: React.FC = () => {
   const { folderId } = useParams<{ folderId?: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [folderData, setFolderData] = useState<FolderData | null>(null);
   const [breadcrumbs, setBreadcrumbs] = useState<Breadcrumb[]>([]);
@@ -228,12 +230,14 @@ const MyCloudPage: React.FC = () => {
         )}
       </div>
 
-      <button
-        onClick={() => setIsCreateModalOpen(true)}
-        className="absolute bottom-8 right-8 flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition hover:bg-blue-700"
-      >
-        <PlusIcon className="h-8 w-8" />
-      </button>
+      {user?.role !== "guest" && (
+        <button
+          onClick={() => setIsCreateModalOpen(true)}
+          className="absolute bottom-8 right-8 flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition hover:bg-blue-700"
+        >
+          <PlusIcon className="h-8 w-8" />
+        </button>
+      )}
 
       <RenameModal
         isOpen={renameModal?.isOpen || false}
