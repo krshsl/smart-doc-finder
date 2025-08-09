@@ -1,15 +1,16 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
-import { GuestRoute } from "../auth/GuestRoute";
-import { ProtectedRoute } from "../auth/ProtectedRoute";
-
 import LoginPage from "../pages/LoginPage";
 import CreateUserPage from "../pages/CreateUserPage";
 import DashboardLayout from "../layouts/DashboardLayout";
 import MyCloudPage from "../pages/MyCloudPage";
 import UploadFilesPage from "../pages/UploadFilesPage";
 import SettingsPage from "../pages/SettingsPage";
+import SearchPage from "../pages/SearchPage";
+
+import { GuestRoute } from "../auth/GuestRoute";
+import { ProtectedRoute } from "../auth/ProtectedRoute";
 
 const AppRouter: React.FC = () => {
   return (
@@ -41,6 +42,7 @@ const AppRouter: React.FC = () => {
         <Route index element={<Navigate to="my-cloud" replace />} />
         <Route path="my-cloud/:folderId?" element={<MyCloudPage />} />
         <Route path="upload-files" element={<UploadFilesPage />} />
+        <Route path="search" element={<SearchPage />} />
         <Route path="settings" element={<SettingsPage />}>
           <Route
             path="create-user"

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FolderIcon, DocumentIcon, PlusIcon } from "@heroicons/react/24/solid";
 
-import api from "../services/api";
 import { ContextMenu } from "../components/ContextMenu";
 import { RenameModal } from "../components/RenameModal";
 import { CreateItemModal } from "../components/CreateItemModal";
@@ -10,6 +9,8 @@ import { Breadcrumbs } from "../components/Breadcrumbs";
 import { FileViewerModal } from "../components/FileViewerModal";
 import { LoadingOverlay } from "../components/LoadingOverlay";
 import { Modal } from "../components/Modal";
+
+import api from "../services/api";
 import { FolderData, Breadcrumb, FolderItem, FileItem } from "../types";
 
 const buildBreadcrumbs = (currentFolder: FolderData | null): Breadcrumb[] => {

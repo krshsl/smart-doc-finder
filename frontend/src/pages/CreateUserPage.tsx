@@ -2,10 +2,12 @@ import React, { useState, useRef, Fragment } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Listbox, Transition } from "@headlessui/react";
 import { CheckIcon, ChevronUpDownIcon } from "@heroicons/react/20/solid";
+
 import { LoadingOverlay } from "../components/LoadingOverlay";
 import { Modal } from "../components/Modal";
-import api from "../services/api";
+
 import { useAuth } from "../auth/AuthContext";
+import api from "../services/api";
 
 const roles = [
   { value: "user", name: "User" },

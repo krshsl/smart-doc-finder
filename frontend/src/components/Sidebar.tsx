@@ -7,6 +7,7 @@ import {
   UserCircleIcon,
   ArrowLeftStartOnRectangleIcon,
 } from "@heroicons/react/24/outline";
+
 import { useAuth } from "../auth/AuthContext";
 import { User } from "../types";
 
@@ -14,7 +15,7 @@ interface SidebarProps {
   user: User;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ user }) => {
+const Sidebar: React.FC<SidebarProps> = ({ user }) => {
   const { logout } = useAuth();
 
   const navItems = [
@@ -84,3 +85,5 @@ export const Sidebar: React.FC<SidebarProps> = ({ user }) => {
     </aside>
   );
 };
+
+export default Sidebar;
