@@ -36,6 +36,9 @@ Bring your dev environment online quickly:
 # Start services
 docker compose -f docker-compose.dev.yml up -d
 
+# Restart services
+docker compose -f docker-compose.dev.yml restart
+
 # Bring down services and clean up volumes
 docker compose -f docker-compose.dev.yml down -v
 ```
