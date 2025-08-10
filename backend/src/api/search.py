@@ -8,6 +8,7 @@ from redis.exceptions import RedisError
 
 import src.utils.auth as auth
 from src.models import File, Folder, User
+from src.rag.search import perform_redis_search, perform_mongodb_fallback_search
 
 router = APIRouter()
 
@@ -39,14 +40,12 @@ async def ai_search(
     search_results = []
 
     try:
-        results = perform_redis_search(q, str(current_user.id))
-        search_results = results
+        search_results = await perform_redis_search(q, str(current_user.id))
     except RedisError:
-        results = await perform_mongodb_fallback_search(q, current_user)
-        search_results = results
+        search_results = await perform_mongodb_fallback_search(q, current_user)
 
     if not search_results:
-        return {"files": []}
+        return {"files": [], "folders": []}
 
     search_results_ids = [res["id"] for res in search_results]
 
@@ -55,4 +54,5 @@ async def ai_search(
         File.owner.id == current_user.id,
     ).to_list()
 
-    return {"files": await gather(*(f._to_dict() for f in file_docs))}
+    return {"files": await gather(*(f._to_dict() for f in file_docs))
+            , "folders": []}

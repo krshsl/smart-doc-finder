@@ -10,7 +10,7 @@ from . import INDEX_NAME, TOP_K, model
 
 
 @lru_cache(maxsize=128)
-def perform_redis_search(query_text: str, user_id: str):
+async def perform_redis_search(query_text: str, user_id: str):
     r_client = get_redis_client()
     q_emb = (
         model.encode(query_text, normalize_embeddings=True).astype(np.float32).tobytes()

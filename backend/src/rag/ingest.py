@@ -46,14 +46,14 @@ async def ingest_file_to_redis(r_client, file_doc: File, owner: User, contents: 
     emb = np.mean(chunk_embeddings, axis=0).astype(np.float32)
 
     snippet_text = sampled_chunks[0][:200]
-    redis_key = f"{DOC_PREFIX}{file_doc.id}"
+    redis_key = f"{DOC_PREFIX}{str(file_doc.id)}"
     await r_client.hset(
         redis_key,
         mapping={
             "filename": file_doc.file_name,
             "snippet": snippet_text,
             "embedding": emb.tobytes(),
-            "user_id": owner.id,
+            "user_id": str(owner.id),
         },
     )
 

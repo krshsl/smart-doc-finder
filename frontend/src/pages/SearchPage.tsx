@@ -29,13 +29,15 @@ const SearchPage: React.FC = () => {
     type: string;
     name: string;
   } | null>(null);
+  const isAiSearch = location.pathname.includes("/search/ai");
 
   useEffect(() => {
     if (query) {
       const fetchResults = async () => {
         setIsLoading(true);
         try {
-          const response = await api.get(`/search?q=${query}`);
+          const endpoint = isAiSearch ? "/search/ai" : "/search";
+          const response = await api.get(`${endpoint}?q=${query}`);
           setResults(response.data);
         } catch (error) {
           console.error("Failed to fetch search results:", error);

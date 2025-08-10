@@ -29,8 +29,8 @@ class File(BaseDocument):
 
         r = get_redis_client()
         redis_key = f"doc:{self.id}"
-        if r.exists(redis_key):
-            r.delete(redis_key)
+        if await r.exists(redis_key):
+            await r.delete(redis_key)
 
     async def _to_dict(self, include_refs=False):
         file = {
