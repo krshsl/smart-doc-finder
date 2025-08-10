@@ -7,3 +7,14 @@ ALLOWED_MIME_TYPES = [
     "text/plain",
     "text/csv",
 ]
+REQUIRED_ENV_VARS = [
+    "URI",
+    "DB_PASS",
+    "DB_NAME",
+    "SECRET_KEY",
+    "ALGORITHM",
+    "REDIS_HOST",
+    "REDIS_PORT",
+    # "REDIS_USERNAME",
+    "REDIS_PASSWORD",
+]

@@ -17,6 +17,11 @@ class File(BaseDocument):
     folder: Optional[Link[Folder]] = None
     tags: List[str] = []
     gridfs_id: Optional[str] = Field(default=None)
+    content_hash: Optional[str] = Field(default=None)
+    embedding: Optional[List[float]] = Field(default=None)
+
+    class Settings:
+        indexes = ["content_hash"]
 
     @before_event(Delete)
     async def _delete_gridfs_file(self):

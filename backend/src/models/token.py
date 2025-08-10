@@ -14,7 +14,6 @@ class JWTToken(Document):
     expires_at: datetime
 
     class Settings:
-        name = "JWTToken"
         indexes = [
             "token",
             "user",

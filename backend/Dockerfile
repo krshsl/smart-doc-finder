@@ -2,7 +2,7 @@ FROM python:3.13-alpine
 
 WORKDIR /app
 
-COPY backend/requirements.txt ./
+COPY ./requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY backend /app
+COPY . /app
