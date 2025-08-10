@@ -67,9 +67,7 @@ def create_index():
             "ON", "HASH",
             "PREFIX", "1", DOC_PREFIX,
             "SCHEMA",
-            "content", "TEXT", "SORTABLE",
             "filename", "TAG",
-            "page", "NUMERIC", "SORTABLE",
             "embedding", "VECTOR", "HNSW", "6",
                 "TYPE", "FLOAT32",
                 "DIM", EMB_DIM,
@@ -80,7 +78,6 @@ def create_index():
         if "Index already exists" in str(e):
             print("Index already exists, skipping creation.")
         else:
-            print(f"Failed to create index: {e}")
             raise
 
 def ingest_all():
@@ -96,33 +93,27 @@ def ingest_all():
         path = os.path.join(PDF_FOLDER, fname)
         doc_hash = file_hash(path)
 
-        # Skip if already ingested
-        if any(r.scan_iter(f"{DOC_PREFIX}{doc_hash}:chunk:*")):
+        if r.exists(f"{DOC_PREFIX}{doc_hash}"):
             print(f"Skipping {fname} — already ingested.")
             continue
 
+        # Extract full text from PDF
         doc = fitz.open(path)
-        chunks = []
-        for page_num in range(len(doc)):
-            page_text = doc[page_num].get_text().strip()
-            if not page_text:
-                continue
-            for i, chunk in enumerate(chunk_text(page_text)):
-                chunks.append((page_num, i, chunk))
+        full_text = []
+        for page in doc:
+            full_text.append(page.get_text())
+        text = " ".join(full_text).strip()
 
-        print(f"Ingesting {fname}: {len(chunks)} chunks")
+        # Encode entire document once
+        emb = model.encode(text).astype(np.float32)
 
-        for (page_num, idx, chunk) in chunks:
-            emb = model.encode(chunk).astype(np.float32)
-            key = f"{DOC_PREFIX}{doc_hash}:chunk:{idx}:{page_num}"
-            r.hset(key, mapping={
-                "content": chunk,
-                "filename": fname,
-                "page": str(page_num),
-                "embedding": emb.tobytes()
-            })
+        # Store only filename + embedding
+        r.hset(f"{DOC_PREFIX}{doc_hash}", mapping={
+            "filename": fname,
+            "embedding": emb.tobytes()
+        })
 
-        print("Stored:", fname)
+        print(f"Stored: {fname} (size: {len(text)//1024} KB)")
 
 if __name__ == "__main__":
     ingest_all()
