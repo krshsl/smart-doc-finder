@@ -1,38 +1,28 @@
 import {
   Dialog,
-  DialogTitle,
   DialogPanel,
+  DialogTitle,
   Transition,
   TransitionChild,
 } from "@headlessui/react";
-import {
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-} from "@heroicons/react/24/outline";
+import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import React, { Fragment } from "react";
 
-interface ModalProps {
+interface ConfirmationModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onConfirm: () => void;
   title: string;
-  type?: "success" | "error";
   children: React.ReactNode;
 }
 
-export const Modal: React.FC<ModalProps> = ({
+export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   isOpen,
   onClose,
+  onConfirm,
   title,
-  type = "success",
   children,
 }) => {
-  const Icon = type === "success" ? CheckCircleIcon : ExclamationTriangleIcon;
-  const iconColor = type === "success" ? "text-green-500" : "text-red-500";
-  const buttonClass =
-    type === "success"
-      ? "bg-blue-100 text-blue-900 hover:bg-blue-200 focus-visible:ring-blue-500"
-      : "bg-red-100 text-red-900 hover:bg-red-200 focus-visible:ring-red-500";
-
   return (
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-10" onClose={onClose}>
@@ -47,7 +37,6 @@ export const Modal: React.FC<ModalProps> = ({
         >
           <div className="fixed inset-0 bg-black bg-opacity-25" />
         </TransitionChild>
-
         <div className="fixed inset-0 overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-4 text-center">
             <TransitionChild
@@ -64,20 +53,26 @@ export const Modal: React.FC<ModalProps> = ({
                   as="h3"
                   className="text-lg font-medium leading-6 text-gray-900 flex items-center"
                 >
-                  <Icon className={`h-6 w-6 ${iconColor} mr-2`} />
+                  <ExclamationTriangleIcon className="h-6 w-6 text-red-500 mr-2" />
                   {title}
                 </DialogTitle>
                 <div className="mt-2">
                   <p className="text-sm text-gray-500">{children}</p>
                 </div>
-
-                <div className="mt-4">
+                <div className="mt-4 space-x-2">
                   <button
                     type="button"
-                    className={`inline-flex justify-center rounded-md border border-transparent px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${buttonClass}`}
-                    onClick={onClose}
+                    onClick={onConfirm}
+                    className="inline-flex justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
                   >
-                    Got it, thanks!
+                    Confirm
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
                   </button>
                 </div>
               </DialogPanel>

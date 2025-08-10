@@ -1,12 +1,13 @@
-import React from "react";
-import { NavLink } from "react-router-dom";
 import {
   CloudIcon,
   CloudArrowUpIcon,
   Cog6ToothIcon,
   UserCircleIcon,
   ArrowLeftStartOnRectangleIcon,
+  UsersIcon
 } from "@heroicons/react/24/outline";
+import React from "react";
+import { NavLink } from "react-router-dom";
 
 import { useAuth } from "../auth/AuthContext";
 import { User } from "../types";
@@ -23,12 +24,20 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
       to: "/my-cloud",
       label: "My cloud",
       icon: <CloudIcon className="h-6 w-6" />,
+      show: true
     },
     {
       to: "/upload-files",
       label: "Upload files",
       icon: <CloudArrowUpIcon className="h-6 w-6" />,
+      show: user.role !== "guest"
     },
+    {
+      to: "/users",
+      label: "Manage Users",
+      icon: <UsersIcon className="h-6 w-6" />,
+      show: user.role === "admin"
+    }
   ];
 
   const getLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -43,26 +52,26 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
       <div className="flex items-center p-4">
         <UserCircleIcon className="h-12 w-12 text-blue-300" />
         <div className="ml-4">
-          <span className="text-lg font-semibold">{user.name}</span>
+          <span className="text-lg font-semibold">{user.username}</span>
           <span className="block text-xs text-blue-200 capitalize">
             {user.role}
           </span>
         </div>
       </div>
-
       <nav className="mt-8 flex-1">
         <ul className="space-y-2">
-          {navItems.map((item) => (
-            <li key={item.to}>
-              <NavLink to={item.to} className={getLinkClass}>
-                {item.icon}
-                <span className="ml-4">{item.label}</span>
-              </NavLink>
-            </li>
-          ))}
+          {navItems
+            .filter((item) => item.show)
+            .map((item) => (
+              <li key={item.to}>
+                <NavLink to={item.to} className={getLinkClass}>
+                  {item.icon}
+                  <span className="ml-4">{item.label}</span>
+                </NavLink>
+              </li>
+            ))}
         </ul>
       </nav>
-
       <div>
         <ul className="space-y-2">
           <li>

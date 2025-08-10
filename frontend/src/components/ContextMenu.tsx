@@ -1,16 +1,16 @@
-import React, { Fragment } from "react";
 import {
   Menu,
   MenuButton,
   MenuItems,
   MenuItem,
-  Transition,
+  Transition
 } from "@headlessui/react";
 import {
   PencilIcon,
   TrashIcon,
-  ArrowTopRightOnSquareIcon,
+  ArrowTopRightOnSquareIcon
 } from "@heroicons/react/24/outline";
+import React, { Fragment } from "react";
 
 interface ContextMenuProps {
   onOpen: () => void;
@@ -23,7 +23,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   onOpen,
   onRename,
   onDelete,
-  children,
+  children
 }) => {
   return (
     <Menu as="div" className="relative">

@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
-import { LoadingOverlay } from "../components/LoadingOverlay";
 import { useAuth } from "../auth/AuthContext";
+import { LoadingOverlay } from "../components/LoadingOverlay";
+import { guestUser } from "../config";
 
 const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -11,7 +12,7 @@ const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [hasLoginFailed, setHasLoginFailed] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async(e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
@@ -24,6 +25,23 @@ const LoginPage: React.FC = () => {
     } catch (err) {
       setError("Failed to log in. Please check your credentials.");
       setHasLoginFailed(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGuestLogin = async() => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const guestFormData = new FormData();
+      guestFormData.append("username", guestUser.username);
+      guestFormData.append("password", guestUser.password);
+
+      await login(guestFormData);
+      navigate("/");
+    } catch (err) {
+      setError("Failed to log in as guest. Please try again credentials.");
     } finally {
       setIsLoading(false);
     }
@@ -90,6 +108,18 @@ const LoginPage: React.FC = () => {
               {isLoading ? "Signing In..." : "Sign In"}
             </button>
           </form>
+          <div className="my-4 flex items-center">
+            <div className="flex-grow border-t border-gray-300"></div>
+            <span className="mx-4 flex-shrink text-gray-500">or</span>
+            <div className="flex-grow border-t border-gray-300"></div>
+          </div>
+          <button
+            type="button"
+            onClick={handleGuestLogin}
+            className="w-full rounded-lg border border-gray-300 bg-white py-3 font-semibold text-gray-700 transition hover:bg-gray-50"
+          >
+            Login as Guest
+          </button>
           <p className="mt-6 text-center text-sm text-gray-600">
             Don't have an account?{" "}
             <Link

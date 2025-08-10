@@ -1,5 +1,6 @@
-from beanie import Document
 from datetime import datetime, timezone
+
+from beanie import Document
 from pydantic import Field
 
 

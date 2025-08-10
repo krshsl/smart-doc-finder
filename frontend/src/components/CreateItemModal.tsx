@@ -1,6 +1,14 @@
-import React, { useState, Fragment, useRef } from "react";
-import { Dialog, Transition, RadioGroup } from "@headlessui/react";
+import {
+  Dialog,
+  DialogPanel,
+  DialogTitle,
+  Transition,
+  TransitionChild,
+  Radio,
+  RadioGroup,
+} from "@headlessui/react";
 import { FolderIcon, DocumentIcon } from "@heroicons/react/24/outline";
+import React, { useState, Fragment, useRef } from "react";
 
 interface CreateItemModalProps {
   isOpen: boolean;
@@ -47,7 +55,7 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
   return (
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-10" onClose={resetAndClose}>
-        <Transition.Child
+        <TransitionChild
           as={Fragment}
           enter="ease-out duration-300"
           enterFrom="opacity-0"
@@ -57,10 +65,10 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
           leaveTo="opacity-0"
         >
           <div className="fixed inset-0 bg-black bg-opacity-25" />
-        </Transition.Child>
+        </TransitionChild>
         <div className="fixed inset-0 overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-4 text-center">
-            <Transition.Child
+            <TransitionChild
               as={Fragment}
               enter="ease-out duration-300"
               enterFrom="opacity-0 scale-95"
@@ -69,35 +77,35 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-                <Dialog.Title
+              <DialogPanel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                <DialogTitle
                   as="h3"
                   className="text-lg font-medium leading-6 text-gray-900"
                 >
                   Create New
-                </Dialog.Title>
+                </DialogTitle>
 
                 <RadioGroup
                   value={type}
                   onChange={setType}
                   className="mt-4 flex space-x-4"
                 >
-                  <RadioGroup.Option
+                  <Radio
                     value="folder"
                     className={({ checked }) =>
                       `${checked ? "bg-blue-600 text-white" : "bg-white text-gray-900"} relative flex cursor-pointer rounded-lg px-5 py-4 shadow-md focus:outline-none flex-1`
                     }
                   >
                     <FolderIcon className="h-6 w-6 mr-3" /> Folder
-                  </RadioGroup.Option>
-                  <RadioGroup.Option
+                  </Radio>
+                  <Radio
                     value="file"
                     className={({ checked }) =>
                       `${checked ? "bg-blue-600 text-white" : "bg-white text-gray-900"} relative flex cursor-pointer rounded-lg px-5 py-4 shadow-md focus:outline-none flex-1`
                     }
                   >
                     <DocumentIcon className="h-6 w-6 mr-3" /> File
-                  </RadioGroup.Option>
+                  </Radio>
                 </RadioGroup>
 
                 {type === "folder" && (
@@ -141,8 +149,8 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
                     Cancel
                   </button>
                 </div>
-              </Dialog.Panel>
-            </Transition.Child>
+              </DialogPanel>
+            </TransitionChild>
           </div>
         </div>
       </Dialog>

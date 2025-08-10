@@ -1,23 +1,32 @@
-import React, { useState, useRef, Fragment } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Listbox, Transition } from "@headlessui/react";
+import {
+  Label,
+  Listbox,
+  ListboxOption,
+  ListboxOptions,
+  ListboxButton,
+  Transition,
+} from "@headlessui/react";
 import { CheckIcon, ChevronUpDownIcon } from "@heroicons/react/20/solid";
-
-import { LoadingOverlay } from "../components/LoadingOverlay";
-import { Modal } from "../components/Modal";
+import React, { useState, useRef, Fragment, useEffect } from "react";
+import { Link, useNavigate, useParams, useLocation } from "react-router-dom";
 
 import { useAuth } from "../auth/AuthContext";
+import { LoadingOverlay } from "../components/LoadingOverlay";
+import { Modal } from "../components/Modal";
 import api from "../services/api";
+import { User } from "../types";
 
 const roles = [
   { value: "user", name: "User" },
-  { value: "moderator", name: "Moderator" },
+  { value: "guest", name: "Guest" },
   { value: "admin", name: "Admin" },
 ];
 
-const CreateUserPage: React.FC = () => {
-  const { user } = useAuth();
+const UserFormPage: React.FC = () => {
+  const { user, logout } = useAuth();
+  const { userId } = useParams<{ userId?: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -25,9 +34,46 @@ const CreateUserPage: React.FC = () => {
   const [selectedRole, setSelectedRole] = useState(roles[0]);
   const formRef = useRef<HTMLFormElement>(null);
 
-  const isPublicSignUp = !user;
+  const isEditingCurrentUser = location.pathname.includes(
+    "/settings/edit-profile",
+  );
+  const passedUserData = location.state?.user;
 
-  const handleCreateUser = async (e: React.FormEvent<HTMLFormElement>) => {
+  const [currentUserData, setCurrentUserData] = useState<User | null>(
+    isEditingCurrentUser ? user : passedUserData || null,
+  );
+
+  const isPublicSignUp = !user;
+  const isEditMode = !!userId || isEditingCurrentUser;
+
+  useEffect(() => {
+    const effectiveUserData = isEditingCurrentUser ? user : passedUserData;
+
+    if (isEditMode && !effectiveUserData) {
+      const fetchUserData = async () => {
+        setIsLoading(true);
+        try {
+          const response = await api.get(`/user/${userId}`);
+          setCurrentUserData(response.data);
+          const role =
+            roles.find((r) => r.value === response.data.role) || roles[0];
+          setSelectedRole(role);
+        } catch (error: any) {
+          setError("Failed to fetch user data: " + error?.message);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchUserData();
+    } else if (isEditMode && effectiveUserData) {
+      setCurrentUserData(effectiveUserData);
+      const role =
+        roles.find((r) => r.value === effectiveUserData.role) || roles[0];
+      setSelectedRole(role);
+    }
+  }, [userId, isEditMode, passedUserData, user, isEditingCurrentUser]);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
@@ -35,18 +81,43 @@ const CreateUserPage: React.FC = () => {
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
 
-    const payload = {
+    if ((data.username as string).includes(" ")) {
+      setError("Username cannot contain spaces.");
+      setIsLoading(false);
+      return;
+    }
+    if ((data.username as string).length < 4) {
+      setError("Username must be at least 4 characters long.");
+      setIsLoading(false);
+      return;
+    }
+    if (data.password && (data.password as string).length < 8) {
+      setError("Password must be at least 8 characters long.");
+      setIsLoading(false);
+      return;
+    }
+
+    const payload: any = {
       username: data.username,
       email: data.email,
-      password: data.password,
       role: selectedRole.value,
     };
+    if (data.password) {
+      payload.password = data.password;
+    }
+
+    const targetUserId = isEditingCurrentUser ? user?.id : userId;
 
     try {
-      await api.post("/user", payload);
-      setModalMessage(`Account for ${data.email} created successfully!`);
+      if (isEditMode) {
+        await api.post(`/user/${targetUserId}`, payload);
+        setModalMessage(`User ${data.email} updated successfully!`);
+      } else {
+        await api.post("/user", payload);
+        setModalMessage(`Account for ${data.email} created successfully!`);
+        formRef.current?.reset();
+      }
       setIsModalOpen(true);
-      formRef.current?.reset();
     } catch (err: any) {
       if (err.response && err.response.data) {
         const errorData = err.response.data;
@@ -68,32 +139,50 @@ const CreateUserPage: React.FC = () => {
 
   const handleModalClose = () => {
     setIsModalOpen(false);
-    if (isPublicSignUp) {
+    if (isEditMode && isEditingCurrentUser) {
+      logout();
+      navigate("/login");
+    } else if (isEditMode) {
+      navigate("/users");
+    } else if (isPublicSignUp) {
       navigate("/login");
     }
   };
 
-  const pageTitle = isPublicSignUp ? "Create an Account" : "Create New User";
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === " ") {
+      e.preventDefault();
+    }
+  };
+
+  const pageTitle = isEditMode
+    ? "Edit User"
+    : isPublicSignUp
+      ? "Create an Account"
+      : "Create New User";
   const pageSubtitle = isPublicSignUp
     ? "Join us today!"
-    : "Add a new user to the system.";
+    : "Update the user's details.";
 
   const formContent = (
     <div className="w-full max-w-md">
       <h1 className="mb-2 text-4xl font-bold text-gray-800">{pageTitle}</h1>
       <p className="mb-8 text-gray-500">{pageSubtitle}</p>
-      <form ref={formRef} onSubmit={handleCreateUser}>
+      <form ref={formRef} onSubmit={handleSubmit}>
         <div className="mb-4">
           <label
             className="mb-2 block font-medium text-gray-700"
             htmlFor="username"
           >
-            Full Name
+            Username
           </label>
           <input
             type="text"
             id="username"
             name="username"
+            defaultValue={currentUserData?.username}
+            key={currentUserData?.id}
+            onKeyDown={handleKeyDown}
             required
             className="w-full rounded-lg border border-gray-300 p-3"
           />
@@ -109,6 +198,9 @@ const CreateUserPage: React.FC = () => {
             type="email"
             id="new-email"
             name="email"
+            defaultValue={currentUserData?.email}
+            key={currentUserData?.id}
+            onKeyDown={handleKeyDown}
             required
             className="w-full rounded-lg border border-gray-300 p-3"
           />
@@ -124,19 +216,22 @@ const CreateUserPage: React.FC = () => {
             type="password"
             id="new-password"
             name="password"
-            required
+            placeholder={
+              isEditMode ? "Leave blank to keep current password" : ""
+            }
+            required={!isEditMode}
             className="w-full rounded-lg border border-gray-300 p-3"
           />
         </div>
 
-        {user?.role === "admin" && (
+        {user?.role === "admin" && !isEditMode && (
           <div className="mb-6">
             <Listbox value={selectedRole} onChange={setSelectedRole}>
               <div className="relative mt-1">
-                <Listbox.Label className="mb-2 block font-medium text-gray-700">
+                <Label className="mb-2 block font-medium text-gray-700">
                   Role
-                </Listbox.Label>
-                <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white py-3 pl-3 pr-10 text-left border border-gray-300">
+                </Label>
+                <ListboxButton className="relative w-full cursor-default rounded-lg bg-white py-3 pl-3 pr-10 text-left border border-gray-300">
                   <span className="block truncate">{selectedRole.name}</span>
                   <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
                     <ChevronUpDownIcon
@@ -144,16 +239,16 @@ const CreateUserPage: React.FC = () => {
                       aria-hidden="true"
                     />
                   </span>
-                </Listbox.Button>
+                </ListboxButton>
                 <Transition
                   as={Fragment}
                   leave="transition ease-in duration-100"
                   leaveFrom="opacity-100"
                   leaveTo="opacity-0"
                 >
-                  <Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                  <ListboxOptions className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
                     {roles.map((role) => (
-                      <Listbox.Option
+                      <ListboxOption
                         key={role.value}
                         className={({ active }) =>
                           `relative cursor-default select-none py-2 pl-10 pr-4 ${active ? "bg-blue-100 text-blue-900" : "text-gray-900"}`
@@ -177,9 +272,9 @@ const CreateUserPage: React.FC = () => {
                             ) : null}
                           </>
                         )}
-                      </Listbox.Option>
+                      </ListboxOption>
                     ))}
-                  </Listbox.Options>
+                  </ListboxOptions>
                 </Transition>
               </div>
             </Listbox>
@@ -192,7 +287,11 @@ const CreateUserPage: React.FC = () => {
           disabled={isLoading}
           className="w-full rounded-lg bg-green-600 py-3 font-semibold text-white transition hover:bg-opacity-90 disabled:cursor-not-allowed disabled:bg-opacity-50"
         >
-          {isLoading ? "Creating Account..." : "Create Account"}
+          {isLoading
+            ? "Saving..."
+            : isEditMode
+              ? "Save Changes"
+              : "Create Account"}
         </button>
       </form>
       {isPublicSignUp && (
@@ -229,4 +328,4 @@ const CreateUserPage: React.FC = () => {
   );
 };
 
-export default CreateUserPage;
+export default UserFormPage;

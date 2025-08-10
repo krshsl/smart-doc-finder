@@ -1,9 +1,11 @@
 from datetime import datetime, timedelta, timezone
+
 from beanie import Document, Link
-from pymongo import ASCENDING, IndexModel
 from pydantic import Field
+from pymongo import ASCENDING, IndexModel
 
 from .user import User
+
 
 class JWTToken(Document):
     user: Link[User]
@@ -20,7 +22,7 @@ class JWTToken(Document):
             IndexModel(
                 [("expires_at", ASCENDING)],
                 expireAfterSeconds=0,
-                name="expires_at_ttl_index"
+                name="expires_at_ttl_index",
             ),
         ]
 

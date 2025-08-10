@@ -10,7 +10,7 @@ interface GuestRouteProps {
 
 export const GuestRoute: React.FC<GuestRouteProps> = ({
   redirect_admin = true,
-  children,
+  children
 }) => {
   const { user } = useAuth();
 

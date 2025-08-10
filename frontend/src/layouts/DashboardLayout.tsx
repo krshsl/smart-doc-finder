@@ -1,10 +1,10 @@
 import React from "react";
 import { Outlet } from "react-router-dom";
 
-import Sidebar from "../components/Sidebar";
-import Navbar from "../components/Navbar";
-
 import { useAuth } from "../auth/AuthContext";
+import Navbar from "../components/Navbar";
+import Sidebar from "../components/Sidebar";
+
 
 const DashboardLayout: React.FC = () => {
   const { user } = useAuth();
