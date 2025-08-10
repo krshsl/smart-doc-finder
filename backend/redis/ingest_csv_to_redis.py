@@ -4,19 +4,19 @@ import numpy as np
 import redis
 import pandas as pd
 from sentence_transformers import SentenceTransformer
-
-# Load env vars (make sure you load them if needed)
 from dotenv import load_dotenv
+
+# ---------- CONFIG ----------
 dotenv_path = os.path.join(os.path.dirname(__file__), "..", "dev.env")
 load_dotenv(dotenv_path=dotenv_path)
 
-# ---------- CONFIG ----------
-CSV_FOLDER = "files"             # Folder containing CSV files
+CSV_FOLDER = "files"
 INDEX_NAME = "doc_index"
-DOC_PREFIX = "doc:"             # Redis key prefix
-
-MODEL_NAME = "all-MiniLM-L6-v2"  # Embedding model
-EMB_DIM = 384                    # Embedding dimension
+DOC_PREFIX = "doc:"
+MODEL_NAME = "all-MiniLM-L6-v2"
+EMB_DIM = 384
+SAMPLE_CHUNKS = 5       # number of chunks to sample from each CSV
+CHUNK_WORDS = 200       # words per sampled chunk
 
 REDIS_HOST = os.getenv("REDIS_HOST")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
@@ -29,10 +29,15 @@ r = redis.Redis(
     port=REDIS_PORT,
     username=REDIS_USERNAME,
     password=REDIS_PASSWORD,
-    decode_responses=False  # Keep false for binary embedding
+    decode_responses=False
 )
 
 model = SentenceTransformer(MODEL_NAME)
+
+def chunk_text(text, n=CHUNK_WORDS):
+    words = text.split()
+    for i in range(0, len(words), n):
+        yield " ".join(words[i:i + n])
 
 def file_hash(path):
     h = hashlib.sha256()
@@ -62,10 +67,11 @@ def create_index():
             "PREFIX", "1", DOC_PREFIX,
             "SCHEMA",
             "filename", "TAG",
+            "snippet", "TEXT",
             "embedding", "VECTOR", "HNSW", "6",
                 "TYPE", "FLOAT32",
                 "DIM", EMB_DIM,
-                "DISTANCE_METRIC", "COSINE"
+                "DISTANCE_METRIC", "L2"
         )
         print("Index created successfully.")
     except redis.exceptions.ResponseError as e:
@@ -91,20 +97,35 @@ def ingest_all():
             print(f"Skipping {fname} — already ingested.")
             continue
 
-        # Read CSV and convert entire content to text
-        df = pd.read_csv(path)
-        text = "\n".join([", ".join(map(str, row)) for row in df.values])
+        try:
+            df = pd.read_csv(path)
+        except Exception as e:
+            print(f"Skipping {fname} — failed to read CSV: {e}")
+            continue
 
-        # Encode entire document once
-        emb = model.encode(text).astype(np.float32)
+        full_text = df.to_string(index=False)
+        if not full_text.strip():
+            print(f"Skipping {fname} — empty content.")
+            continue
 
-        # Store only filename + embedding
+        chunks = list(chunk_text(full_text))
+        if len(chunks) > SAMPLE_CHUNKS:
+            step = max(1, len(chunks) // SAMPLE_CHUNKS)
+            sampled_chunks = [chunks[i] for i in range(0, len(chunks), step)][:SAMPLE_CHUNKS]
+        else:
+            sampled_chunks = chunks
+
+        chunk_embeddings = model.encode(sampled_chunks)
+        emb = np.mean(chunk_embeddings, axis=0).astype(np.float32)
+
+        snippet_text = sampled_chunks[0][:200]
         r.hset(f"{DOC_PREFIX}{doc_hash}", mapping={
             "filename": fname,
+            "snippet": snippet_text,
             "embedding": emb.tobytes()
         })
 
-        print(f"Stored: {fname} (size: {len(text)//1024} KB)")
+        print(f"Stored: {fname} ({len(full_text)//1024} KB)")
 
 if __name__ == "__main__":
     ingest_all()

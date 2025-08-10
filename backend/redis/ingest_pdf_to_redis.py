@@ -2,22 +2,21 @@ import os
 import hashlib
 import numpy as np
 import redis
-import fitz                     # pip install pymupdf
+import fitz  # pip install pymupdf
 from sentence_transformers import SentenceTransformer
-
-# Load env vars (make sure you load them if needed)
 from dotenv import load_dotenv
+
+# ---------- CONFIG ----------
 dotenv_path = os.path.join(os.path.dirname(__file__), "..", "dev.env")
 load_dotenv(dotenv_path=dotenv_path)
 
-# ---------- CONFIG ----------
-PDF_FOLDER = "files"             # Folder containing PDFs
+PDF_FOLDER = "files"
 INDEX_NAME = "doc_index"
-DOC_PREFIX = "doc:"             # Redis key prefix
-CHUNK_WORDS = 250               # Words per text chunk
-
-MODEL_NAME = "all-MiniLM-L6-v2"  # Embedding model
-EMB_DIM = 384                    # Embedding dimension
+DOC_PREFIX = "doc:"
+MODEL_NAME = "all-MiniLM-L6-v2"
+EMB_DIM = 384
+SAMPLE_CHUNKS = 5       # number of chunks to sample from each PDF
+CHUNK_WORDS = 200       # words per sampled chunk
 
 REDIS_HOST = os.getenv("REDIS_HOST")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
@@ -30,7 +29,7 @@ r = redis.Redis(
     port=REDIS_PORT,
     username=REDIS_USERNAME,
     password=REDIS_PASSWORD,
-    decode_responses=False  # Keep false for binary embedding
+    decode_responses=False
 )
 
 model = SentenceTransformer(MODEL_NAME)
@@ -68,10 +67,11 @@ def create_index():
             "PREFIX", "1", DOC_PREFIX,
             "SCHEMA",
             "filename", "TAG",
+            "snippet", "TEXT",
             "embedding", "VECTOR", "HNSW", "6",
                 "TYPE", "FLOAT32",
                 "DIM", EMB_DIM,
-                "DISTANCE_METRIC", "COSINE"
+                "DISTANCE_METRIC", "L2"
         )
         print("Index created successfully.")
     except redis.exceptions.ResponseError as e:
@@ -97,23 +97,35 @@ def ingest_all():
             print(f"Skipping {fname} — already ingested.")
             continue
 
-        # Extract full text from PDF
+        # Extract text from PDF
         doc = fitz.open(path)
-        full_text = []
-        for page in doc:
-            full_text.append(page.get_text())
-        text = " ".join(full_text).strip()
+        full_text = " ".join(page.get_text() for page in doc).strip()
 
-        # Encode entire document once
-        emb = model.encode(text).astype(np.float32)
+        if not full_text:
+            print(f"Skipping {fname} — empty text.")
+            continue
 
-        # Store only filename + embedding
+        # Break into chunks & sample a few for better coverage
+        chunks = list(chunk_text(full_text))
+        if len(chunks) > SAMPLE_CHUNKS:
+            step = max(1, len(chunks) // SAMPLE_CHUNKS)
+            sampled_chunks = [chunks[i] for i in range(0, len(chunks), step)][:SAMPLE_CHUNKS]
+        else:
+            sampled_chunks = chunks
+
+        # Encode each sampled chunk, then average
+        chunk_embeddings = model.encode(sampled_chunks)
+        emb = np.mean(chunk_embeddings, axis=0).astype(np.float32)
+
+        # Save filename, snippet, and single averaged embedding
+        snippet_text = sampled_chunks[0][:200]  # first 200 chars of first chunk
         r.hset(f"{DOC_PREFIX}{doc_hash}", mapping={
             "filename": fname,
+            "snippet": snippet_text,
             "embedding": emb.tobytes()
         })
 
-        print(f"Stored: {fname} (size: {len(text)//1024} KB)")
+        print(f"Stored: {fname} ({len(full_text)//1024} KB)")
 
 if __name__ == "__main__":
     ingest_all()

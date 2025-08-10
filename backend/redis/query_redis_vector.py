@@ -21,7 +21,7 @@ EMB_DIM = 384
 MODEL_NAME = "all-MiniLM-L6-v2"
 # ----------------------------
 
-# Redis client (keep decode_responses=False for binary vectors)
+# Redis client (binary safe for embeddings)
 r = redis.Redis(
     host=REDIS_HOST,
     port=REDIS_PORT,
@@ -33,12 +33,10 @@ r = redis.Redis(
 model = SentenceTransformer(MODEL_NAME)
 
 def search_vector(query_text, k=TOP_K):
-    """Search top-k most relevant unique documents."""
-    q_emb = model.encode(query_text).astype(np.float32).tobytes()
-    knn = f"*=>[KNN {k} @embedding $vec AS score]"
+    q_emb = model.encode(query_text, normalize_embeddings=True).astype(np.float32).tobytes()
+    knn = f"*=>[KNN {k} @embedding $vec AS distance]"
 
-    # We only store filename + embedding in this schema
-    q = RSQuery(knn).return_fields("filename", "score").dialect(2)
+    q = RSQuery(knn).return_fields("filename", "snippet", "distance").dialect(2)
     res = r.ft(INDEX_NAME).search(q, query_params={"vec": q_emb})
 
     if not res.docs:
@@ -48,20 +46,30 @@ def search_vector(query_text, k=TOP_K):
     unique_results = []
 
     for doc in res.docs:
-        filename = doc.filename.decode() if isinstance(doc.filename, (bytes, bytearray)) else doc.filename
-        score = float(doc.score) if not isinstance(doc.score, (bytes, bytearray)) else float(doc.score.decode())
+        filename = (
+            doc.filename.decode() if isinstance(doc.filename, (bytes, bytearray)) else doc.filename
+        )
+        snippet = (
+            doc.snippet.decode() if isinstance(doc.snippet, (bytes, bytearray)) else doc.snippet
+        )
+        distance = float(doc.distance) if not isinstance(doc.distance, (bytes, bytearray)) else float(doc.distance.decode())
+
+# Convert L2 distance to a "similarity" (larger is better)
+        score = 1 / (1 + distance)  # maps distance → (0,1]
 
         if filename not in seen_filenames:
             seen_filenames.add(filename)
             unique_results.append({
                 "filename": filename,
-                "score": score
+                "snippet": snippet,
+                "score": score,
             })
 
         if len(unique_results) >= k:
             break
 
     return unique_results
+
 
 
 if __name__ == "__main__":
@@ -72,4 +80,5 @@ if __name__ == "__main__":
         print("No matching document found.")
     else:
         for i, rdoc in enumerate(results, start=1):
-            print(f"{i}. {rdoc['filename']}  score={rdoc['score']:.4f}")
+            print(f"\n{i}. {rdoc['filename']}  (score={rdoc['score']:.4f})")
+            print(f"   Snippet: {rdoc['snippet']}")
