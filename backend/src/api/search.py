@@ -7,8 +7,13 @@ from fastapi import APIRouter, BackgroundTasks, Depends, status
 from redis.exceptions import RedisError
 
 import src.utils.auth as auth
+from src.client import get_redis_client
 from src.models import File, Folder, User
-from src.rag.search import perform_redis_search, perform_mongodb_fallback_search
+from src.rag.ingest import sync_files_to_redis
+from src.rag.search import (
+    perform_mongodb_search,
+    perform_redis_search,
+)
 
 router = APIRouter()
 
@@ -34,7 +39,10 @@ async def search_files_and_folders(q: str, token=Depends(auth.verify_access_toke
 
 @router.get("/search/ai", status_code=status.HTTP_200_OK)
 async def ai_search(
-    q: str, background_tasks: BackgroundTasks, token=Depends(auth.verify_access_token)
+    q: str,
+    background_tasks: BackgroundTasks,
+    token=Depends(auth.verify_access_token),
+    r_client=Depends(get_redis_client),
 ):
     token_data, current_user = token
     search_results = []
@@ -42,7 +50,11 @@ async def ai_search(
     try:
         search_results = await perform_redis_search(q, str(current_user.id))
     except RedisError:
-        search_results = await perform_mongodb_fallback_search(q, current_user)
+        search_results = await perform_mongodb_search(q, current_user)
+
+        if search_results:
+            result_ids = [res["id"] for res in search_results]
+            background_tasks.add_task(sync_files_to_redis, r_client, result_ids)
 
     if not search_results:
         return {"files": [], "folders": []}
@@ -54,5 +66,4 @@ async def ai_search(
         File.owner.id == current_user.id,
     ).to_list()
 
-    return {"files": await gather(*(f._to_dict() for f in file_docs))
-            , "folders": []}
+    return {"files": await gather(*(f._to_dict() for f in file_docs)), "folders": []}

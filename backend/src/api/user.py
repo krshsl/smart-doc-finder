@@ -1,4 +1,5 @@
 from asyncio import gather
+from os import getenv
 from typing import List
 
 from bson import ObjectId
@@ -7,9 +8,9 @@ from pydantic import BaseModel, EmailStr, Field, ValidationError, validator
 
 import src.utils.auth as auth
 from src.models import User
-from src.utils.constants import USER_LIMIT
 from src.utils.exceptions import raise_access_denied, raise_not_found
 
+USER_LIMIT = int(getenv("USER_LIMIT"))
 router = APIRouter()
 
 

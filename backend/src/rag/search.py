@@ -27,7 +27,7 @@ async def perform_redis_search(query_text: str, user_id: str):
     ]
 
 
-async def perform_mongodb_fallback_search(query_text: str, user: User):
+async def perform_mongodb_search(query_text: str, user: User):
     query_vector = model.encode(query_text).tolist()
 
     pipeline = [
@@ -36,10 +36,14 @@ async def perform_mongodb_fallback_search(query_text: str, user: User):
                 "index": "vector_search_index",
                 "path": "embedding",
                 "queryVector": query_vector,
-                "numCandidates": 10,
+                "numCandidates": 100,
                 "limit": TOP_K,
-                "filter": {"owner.$id": user.id},
-            }
+                "filter": {
+                    "compound": {
+                        "must": [{"equals": {"path": "owner.id", "value": user.id}}]
+                    }
+                },
+            },
         },
         {
             "$project": {

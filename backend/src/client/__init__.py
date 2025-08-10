@@ -6,3 +6,4 @@ from .connections import (
     init_db,
     init_redis,
 )
+from .index import init_search_index

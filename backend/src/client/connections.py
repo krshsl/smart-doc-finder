@@ -1,3 +1,6 @@
+import logging
+from types import SimpleNamespace
+
 from beanie import init_beanie
 from gridfs import AsyncGridFSBucket
 from pymongo import AsyncMongoClient
@@ -21,21 +24,22 @@ async def init_db(uri: str, db_name: str):
     await init_beanie(database=db, document_models=[User, File, Folder, JWTToken])
 
 
-async def init_redis(env_vars):
+async def init_redis(env: SimpleNamespace):
     global redis_client
     try:
         redis_client = Redis(
-            host=env_vars.REDIS_HOST,
-            port=env_vars.REDIS_PORT,
-            username=env_vars.REDIS_USERNAME,
-            password=env_vars.REDIS_PASSWORD,
+            host=env.REDIS_HOST,
+            port=env.REDIS_PORT,
+            username=env.REDIS_USERNAME,
+            password=env.REDIS_PASSWORD,
             decode_responses=False,
         )
         await redis_client.ping()
     except ConnectionError as e:
-        print(f"Could not connect to Redis: {e}")
+        logger = logging.getLogger("uvicorn")
+        logger.info("Could not connect to Redis: ", e)
         redis_client = None
-        exit(0)
+        exit(1)
 
 
 def get_mongo_client() -> AsyncMongoClient:

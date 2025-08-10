@@ -1,5 +1,7 @@
 import numpy as np
+from bson import ObjectId
 
+from src.client import get_fs
 from src.models import File, User
 
 from . import CHUNK_WORDS, DOC_PREFIX, SAMPLE_CHUNKS, model
@@ -60,3 +62,25 @@ async def ingest_file_to_redis(r_client, file_doc: File, owner: User, contents: 
     file_doc.embedding = emb.tolist()
     file_doc.file_size += emb.nbytes
     await file_doc.save()
+
+
+async def sync_files_to_redis(r_client, file_ids: list[str]):
+    from src import logger
+
+    fs = get_fs()
+
+    logger.info(f"Background sync initiated for {len(file_ids)} file(s).")
+
+    for file_id in file_ids:
+        try:
+            file_doc = await File.get(ObjectId(file_id))
+            if not (file_doc and file_doc.gridfs_id):
+                continue
+
+            grid_out = await fs.open_download_stream(ObjectId(file_doc.gridfs_id))
+            contents = await grid_out.read()
+            owner = await file_doc.owner.fetch()
+
+            await ingest_file_to_redis(r_client, file_doc, owner, contents)
+        except Exception as e:
+            logger.error(f"Failed to sync file {file_id} to Redis: {e}")

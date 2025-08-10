@@ -8,34 +8,36 @@ from types import SimpleNamespace
 from fastapi import FastAPI
 
 from .api import routes
-from .client import init_db, init_redis
-from .utils.constants import REQUIRED_ENV_VARS
+from .client import init_db, init_redis, init_search_index
+from .utils.constants import REQUIRED_APP_VARS
 
 tracemalloc.start()
 logger = logging.getLogger("uvicorn")
 
 
-def get_env_vars():
-    env_vars = {name: getenv(name) for name in REQUIRED_ENV_VARS}
+def get_app_vars():
+    app_vars = {name: getenv(name) for name in REQUIRED_APP_VARS}
 
-    missing_vars = [name for name, val in env_vars.items() if not val]
+    missing_vars = [name for name, val in app_vars.items() if not val]
     if missing_vars:
         logger.error(f"Missing env vars: {', '.join(missing_vars)}")
         exit(1)
 
-    return SimpleNamespace(**env_vars)
+    return SimpleNamespace(**app_vars)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    env_vars = get_env_vars()
+    app_vars = get_app_vars()
     await init_db(
-        env_vars.URI.replace("<db_password>", env_vars.DB_PASS),
-        env_vars.DB_NAME,
+        app_vars.DB_URI.replace("<db_password>", app_vars.DB_PASS),
+        app_vars.DB_NAME,
     )
     logger.info("Database initialized successfully.")
-    await init_redis(env_vars)
+    await init_redis(app_vars)
     logger.info("Redis initialized successfully.")
+    await init_search_index(app_vars)
+    logger.info("Atlas Search index initialized successfully.")
     yield
     logger.info("Application shutting down.")
 
