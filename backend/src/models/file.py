@@ -17,19 +17,20 @@ class File(BaseDocument):
     folder: Optional[Link[Folder]] = None
     tags: List[str] = []
     gridfs_id: Optional[str] = Field(default=None)
-    content_hash: Optional[str] = Field(default=None)
     embedding: Optional[List[float]] = Field(default=None)
-
-    class Settings:
-        indexes = ["content_hash"]
 
     @before_event(Delete)
     async def _delete_gridfs_file(self):
-        from src.client import get_fs
+        from src.client import get_fs, get_redis_client
 
         fs = get_fs()
         if self.gridfs_id:
             await fs.delete(ObjectId(self.gridfs_id))
+
+        r = get_redis_client()
+        redis_key = f"doc:{self.id}"
+        if r.exists(redis_key):
+            r.delete(redis_key)
 
     async def _to_dict(self, include_refs=False):
         file = {

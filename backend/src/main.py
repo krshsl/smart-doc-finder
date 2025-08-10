@@ -34,8 +34,9 @@ async def lifespan(app: FastAPI):
         env_vars.DB_NAME,
     )
     logger.info("Database initialized successfully.")
+    await init_redis(env_vars)
+    logger.info("Redis initialized successfully.")
     yield
-    await init_redis()
     logger.info("Application shutting down.")
 
 
