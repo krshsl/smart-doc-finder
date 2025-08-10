@@ -1,4 +1,5 @@
 import logging
+import tracemalloc
 from contextlib import asynccontextmanager
 from os import getenv
 from sys import exit
@@ -9,6 +10,7 @@ from fastapi import FastAPI
 from .api import routes
 from .client import init_db
 
+tracemalloc.start()
 logger = logging.getLogger("uvicorn")
 
 

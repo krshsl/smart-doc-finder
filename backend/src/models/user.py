@@ -40,11 +40,12 @@ class User(BaseDocument):
     async def _delete_default_folder(self):
         from .folder import Folder
 
-        await Folder.find_one(
+        folder = await Folder.find_one(
             Folder.name == DEFAULT_FOLDER,
             Folder.parent == None,
             Folder.owner == DBRef(User.__name__, self.id),
-        ).delete()  # only this triggers cascade delete?
+        )  # first get the folder, then delete it for the cascade to take effect!
+        await folder.delete()
 
     async def _to_dict(self):
         return {

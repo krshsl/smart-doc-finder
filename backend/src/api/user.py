@@ -2,7 +2,7 @@ from asyncio import gather
 from typing import List
 
 from bson import ObjectId
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr, Field, ValidationError, validator
 
 import src.utils.auth as auth
@@ -136,7 +136,10 @@ async def get_users(data: UsersRequest, token=Depends(auth.verify_access_token))
 
 @router.post("/user/{user_id}", status_code=status.HTTP_200_OK)
 async def update_user(
-    user_id: str, data: UserUpdateRequest, token=Depends(auth.verify_access_token)
+    user_id: str,
+    data: UserUpdateRequest,
+    background_tasks: BackgroundTasks,
+    token=Depends(auth.verify_access_token),
 ):
     token_data, current_user = token
     user = await User.get(user_id)
@@ -146,14 +149,23 @@ async def update_user(
     if user.id != current_user.id and current_user.role != "admin":
         raise_access_denied()
 
-    for var in ["username", "email"]:
-        if var in data and data[var]:
-            setattr(user, var, data[var])
+    if data.username is not None:
+        user.username = data.username
 
-    if "password" in data and data["password"]:
-        user.password = auth._get_password_hash(data["password"])
+    if data.email is not None:
+        user.email = data.email
+
+    if data.password is not None:
+        user.password = auth._get_password_hash(data.password)
 
     await user.save()
+
+    if user.id == current_user.id:
+        background_tasks.add_task(token_data.delete)
+
+        token_str = await auth._create_access_token(user)
+        return {"access_token": token_str, "token_type": "bearer"}
+
     return {"message": "User updated successfully"}
 
 

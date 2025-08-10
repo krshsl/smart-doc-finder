@@ -28,5 +28,5 @@ async def search_files_and_folders(q: str, token=Depends(auth.verify_access_toke
 
     return {
         "folders": await gather(*(f._to_dict() for f in folders)),
-        "files": await gather(*(f._to_dict() for f in files)),
+        "files": await gather(*(f._to_dict(include_refs=True) for f in files)),
     }

@@ -26,8 +26,8 @@ class File(BaseDocument):
         if self.gridfs_id:
             await fs.delete(ObjectId(self.gridfs_id))
 
-    async def _to_dict(self):
-        return {
+    async def _to_dict(self, include_refs=False):
+        file = {
             "id": str(self.id),
             "file_name": self.file_name,
             "file_type": self.file_type,
@@ -35,3 +35,9 @@ class File(BaseDocument):
             "tags": self.tags,
             "gridfs_id": str(self.gridfs_id),
         }
+
+        if include_refs:
+            folder = await self.folder.fetch()
+            file["folder"] = await folder._to_dict()
+
+        return file

@@ -1,10 +1,14 @@
-from bson import ObjectId
-from bson.dbref import DBRef
+import zipfile
+from io import BytesIO
+
+from bson import DBRef, ObjectId
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, constr
 
 import src.utils.auth as auth
-from src.models import Folder, User
+from src.client import get_fs
+from src.models import File, Folder, User
 from src.utils.constants import DEFAULT_FOLDER, META_DATA_SIZE, STORAGE_QUOTA
 from src.utils.exceptions import (
     raise_access_denied,
@@ -123,6 +127,54 @@ async def get_folder_contents(folder_id: str, token=Depends(auth.verify_access_t
     return await folder._to_dict(include_refs=True, include_parents=True)
 
 
+@router.get("/folder/download/{folder_id}", status_code=status.HTTP_200_OK)
+async def download_folder(
+    folder_id: str, token=Depends(auth.verify_access_token), fs=Depends(get_fs)
+):
+    token_data, current_user = token
+    folder = await Folder.get(ObjectId(folder_id))
+    if not folder:
+        raise_not_found(Folder.__name__)
+
+    owner = await folder.owner.fetch()
+    if owner.id != current_user.id:
+        raise_access_denied()
+
+    zip_buffer = BytesIO()
+
+    async def add_folder_to_zip(
+        target_folder: Folder, archive: zipfile.ZipFile, base_path: str
+    ):
+        current_path = f"{base_path}{target_folder.name}/"
+
+        files_in_folder = await File.find(File.folder.id == target_folder.id).to_list()
+        for file_doc in files_in_folder:
+            if not file_doc.gridfs_id:
+                continue
+            try:
+                gridfs_file = await fs.open_download_stream(
+                    ObjectId(file_doc.gridfs_id)
+                )
+                file_content = await gridfs_file.read()
+                archive.writestr(f"{current_path}{file_doc.file_name}", file_content)
+            except Exception:
+                continue
+
+        sub_folders = await Folder.find(Folder.parent.id == target_folder.id).to_list()
+        for sub_folder in sub_folders:
+            await add_folder_to_zip(sub_folder, archive, current_path)
+
+    with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as archive:
+        await add_folder_to_zip(folder, archive, "")
+
+    zip_buffer.seek(0)
+    return StreamingResponse(
+        zip_buffer,
+        media_type="application/zip",
+        headers={"Content-Disposition": f"attachment; filename={folder.name}.zip"},
+    )
+
+
 @router.delete("/folder/{folder_id}", status_code=status.HTTP_200_OK)
 async def delete_folder(
     folder_id: str, token=Depends(auth.verify_access_token_exclude_guests)
@@ -140,7 +192,10 @@ async def delete_folder(
         raise_access_denied()
 
     try:
+        storage_freed = await folder.calculate_total_size()
+        owner.used_storage -= storage_freed
         await folder.delete()
+        await owner.save()
     except Exception as e:
         from src import logger
 

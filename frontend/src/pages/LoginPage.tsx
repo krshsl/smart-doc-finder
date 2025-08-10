@@ -10,21 +10,17 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hasLoginFailed, setHasLoginFailed] = useState(false);
 
   const handleLogin = async(e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
-
     const formData = new FormData(e.currentTarget);
-
     try {
-      await login(formData);
+      login(formData);
       navigate("/");
     } catch (err) {
       setError("Failed to log in. Please check your credentials.");
-      setHasLoginFailed(true);
     } finally {
       setIsLoading(false);
     }
@@ -37,21 +33,13 @@ const LoginPage: React.FC = () => {
       const guestFormData = new FormData();
       guestFormData.append("username", guestUser.username);
       guestFormData.append("password", guestUser.password);
-
-      await login(guestFormData);
+      login(guestFormData);
       navigate("/");
     } catch (err) {
-      setError("Failed to log in as guest. Please try again credentials.");
+      setError("Failed to log in as guest. Please try again.");
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleInputChange = () => {
-    if (hasLoginFailed) {
-      setHasLoginFailed(false);
-    }
-    setError(null);
   };
 
   return (
@@ -75,12 +63,11 @@ const LoginPage: React.FC = () => {
                 Username
               </label>
               <input
-                type="username"
+                type="text"
                 id="username"
                 name="username"
                 placeholder="user"
                 className="w-full rounded-lg border border-gray-300 p-3"
-                onChange={handleInputChange}
               />
             </div>
             <div className="mb-6">
@@ -96,13 +83,12 @@ const LoginPage: React.FC = () => {
                 name="password"
                 placeholder="password"
                 className="w-full rounded-lg border border-gray-300 p-3"
-                onChange={handleInputChange}
               />
             </div>
             {error && <p className="mb-4 text-center text-red-500">{error}</p>}
             <button
               type="submit"
-              disabled={isLoading || hasLoginFailed}
+              disabled={isLoading}
               className="w-full rounded-lg bg-[#2a457a] py-3 font-semibold text-white transition hover:bg-opacity-90 disabled:cursor-not-allowed disabled:bg-opacity-50"
             >
               {isLoading ? "Signing In..." : "Sign In"}

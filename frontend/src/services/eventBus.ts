@@ -1,15 +1,23 @@
 type EventHandler = (data?: any) => void;
 
+const listeners: { [key: string]: EventHandler[] } = {};
+
 const eventBus = {
   on(event: string, callback: EventHandler) {
-    document.addEventListener(event, ((e: CustomEvent) =>
-      callback(e.detail)) as EventListener);
+    if (!listeners[event]) {
+      listeners[event] = [];
+    }
+    listeners[event].push(callback);
   },
   dispatch(event: string, data?: any) {
-    document.dispatchEvent(new CustomEvent(event, { detail: data }));
+    if (listeners[event]) {
+      listeners[event].forEach((callback) => callback(data));
+    }
   },
   remove(event: string, callback: EventHandler) {
-    document.removeEventListener(event, callback as EventListener);
+    if (listeners[event]) {
+      listeners[event] = listeners[event].filter((cb) => cb !== callback);
+    }
   }
 };
 

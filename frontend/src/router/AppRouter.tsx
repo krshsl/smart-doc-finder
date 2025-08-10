@@ -4,12 +4,12 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { GuestRoute } from "../auth/GuestRoute";
 import { ProtectedRoute } from "../auth/ProtectedRoute";
 import DashboardLayout from "../layouts/DashboardLayout";
-import UserFormPage from "../pages/UserFormPage";
 import LoginPage from "../pages/LoginPage";
 import MyCloudPage from "../pages/MyCloudPage";
 import SearchPage from "../pages/SearchPage";
 import SettingsPage from "../pages/SettingsPage";
 import UploadFilesPage from "../pages/UploadFilesPage";
+import UserFormPage from "../pages/UserFormPage";
 import UsersPage from "../pages/UsersPage";
 
 const AppRouter: React.FC = () => {
