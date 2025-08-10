@@ -3,7 +3,7 @@ import React, {
   useState,
   useContext,
   ReactNode,
-  useEffect,
+  useEffect
 } from "react";
 
 import api, { setupInterceptors } from "../services/api";
@@ -32,15 +32,15 @@ const decodeToken = (token: string): User | null => {
 };
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({
-  children,
+  children
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(
-    localStorage.getItem("authToken"),
+    localStorage.getItem("authToken")
   );
   const [isLoading, setIsLoading] = useState(true);
 
-  const logout = async (skipApiCall = false) => {
+  const logout = async(skipApiCall = false) => {
     if (!skipApiCall) {
       try {
         await api.post("/logout");
@@ -97,13 +97,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     }
   }, [token]);
 
-  const login = async (formData: FormData) => {
+  const login = async(formData: FormData) => {
     const params = new URLSearchParams(formData as any);
 
     const response = await api.post("/login", params, {
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
+        "Content-Type": "application/x-www-form-urlencoded"
+      }
     });
 
     const { access_token } = response.data;

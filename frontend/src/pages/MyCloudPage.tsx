@@ -2,7 +2,7 @@ import {
   ArrowDownTrayIcon,
   ArrowTopRightOnSquareIcon,
   PencilIcon,
-  TrashIcon,
+  TrashIcon
 } from "@heroicons/react/24/outline";
 import { DocumentIcon, FolderIcon, PlusIcon } from "@heroicons/react/24/solid";
 import React, {
@@ -10,7 +10,7 @@ import React, {
   useMemo,
   useState,
   useCallback,
-  useRef,
+  useRef
 } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -75,7 +75,7 @@ const MyCloudPage: React.FC = () => {
   } | null>(null);
   const selectAllCheckboxRef = useRef<HTMLInputElement>(null);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async() => {
     setIsLoading(true);
     try {
       const data = await cloudService.getFolderContents(folderId || null);
@@ -85,7 +85,7 @@ const MyCloudPage: React.FC = () => {
       console.error("Failed to fetch folder data:", error);
       setNotificationModal({
         isOpen: true,
-        message: "Could not load your files. Please try again later.",
+        message: "Could not load your files. Please try again later."
       });
     } finally {
       setIsLoading(false);
@@ -98,7 +98,7 @@ const MyCloudPage: React.FC = () => {
   }, [fetchData]);
 
   const handleAction = useCallback(
-    async (action: () => Promise<any>, successMessage?: string) => {
+    async(action: () => Promise<any>, successMessage?: string) => {
       setIsActionLoading(true);
       try {
         await action();
@@ -115,20 +115,20 @@ const MyCloudPage: React.FC = () => {
         setIsActionLoading(false);
       }
     },
-    [fetchData],
+    [fetchData]
   );
 
   const handleOpen = (item: FileItem | FolderItem, type: "file" | "folder") => {
     if (type === "folder") {
       navigate(`/my-cloud/${item.id}`);
     } else {
-      handleAction(async () => {
+      handleAction(async() => {
         const blob = await cloudService.getFileBlob(item.id);
         const fileURL = URL.createObjectURL(blob);
         setFilePreview({
           url: fileURL,
           type: (item as FileItem).file_type,
-          name: (item as FileItem).file_name,
+          name: (item as FileItem).file_name
         });
       });
     }
@@ -138,9 +138,9 @@ const MyCloudPage: React.FC = () => {
     if (!deleteModal) return;
     const action = deleteModal.isBulk
       ? () =>
-          cloudService.deleteItems(selectedItems.files, selectedItems.folders)
+        cloudService.deleteItems(selectedItems.files, selectedItems.folders)
       : () =>
-          cloudService.deleteSingleItem(deleteModal.item!, deleteModal.type!);
+        cloudService.deleteSingleItem(deleteModal.item!, deleteModal.type!);
 
     handleAction(action, "Item(s) deleted successfully.").then(() => {
       if (deleteModal.isBulk) setSelectedItems({ files: [], folders: [] });
@@ -152,7 +152,7 @@ const MyCloudPage: React.FC = () => {
     if (!renameModal?.item) return;
     handleAction(
       () => cloudService.renameItem(renameModal.item, newName),
-      "Item renamed successfully.",
+      "Item renamed successfully."
     );
     setRenameModal(null);
   };
@@ -160,37 +160,37 @@ const MyCloudPage: React.FC = () => {
   const handleSaveFolder = (name: string) => {
     handleAction(
       () => cloudService.createFolder(name, folderData?.id || null),
-      "Folder created successfully.",
+      "Folder created successfully."
     );
   };
 
   const handleUploadFiles = (files: File[], paths: string[]) => {
-    handleAction(async () => {
+    handleAction(async() => {
       const response = await cloudService.uploadItems(
         files,
         paths,
-        folderData?.id || null,
+        folderData?.id || null
       );
       const { successful_uploads, failed_uploads } = response.data;
       let messageLines = [];
       if (successful_uploads?.length > 0)
         messageLines.push(
-          `${successful_uploads.length} item(s) uploaded successfully.`,
+          `${successful_uploads.length} item(s) uploaded successfully.`
         );
       if (failed_uploads?.length > 0)
         messageLines.push(`\n${failed_uploads.length} item(s) failed.`);
       setNotificationModal({
         isOpen: true,
-        message: messageLines.join(" ") || "Upload complete.",
+        message: messageLines.join(" ") || "Upload complete."
       });
     });
   };
 
   const handleDownload = (
     item: FileItem | FolderItem,
-    type: "file" | "folder",
+    type: "file" | "folder"
   ) => {
-    handleAction(async () => {
+    handleAction(async() => {
       let blob;
       let filename;
       if (type === "file") {
@@ -212,10 +212,10 @@ const MyCloudPage: React.FC = () => {
   };
 
   const handleBulkDownload = () => {
-    handleAction(async () => {
+    handleAction(async() => {
       const blob = await cloudService.downloadItems(
         selectedItems.files,
-        selectedItems.folders,
+        selectedItems.folders
       );
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -231,7 +231,7 @@ const MyCloudPage: React.FC = () => {
   const handleSelectionChange = (
     id: string,
     type: "file" | "folder",
-    checked: boolean,
+    checked: boolean
   ) => {
     setSelectedItems((prev) => {
       const newSet = new Set(type === "file" ? prev.files : prev.folders);
@@ -239,7 +239,7 @@ const MyCloudPage: React.FC = () => {
       else newSet.delete(id);
       return {
         ...prev,
-        [type === "file" ? "files" : "folders"]: Array.from(newSet),
+        [type === "file" ? "files" : "folders"]: Array.from(newSet)
       };
     });
   };
@@ -258,39 +258,39 @@ const MyCloudPage: React.FC = () => {
     {
       label: "Open",
       onClick: () => handleOpen(item, type),
-      icon: <ArrowTopRightOnSquareIcon className="h-5 w-5" />,
+      icon: <ArrowTopRightOnSquareIcon className="h-5 w-5" />
     },
     {
       label: "Download",
       onClick: () => handleDownload(item, type),
-      icon: <ArrowDownTrayIcon className="h-5 w-5" />,
+      icon: <ArrowDownTrayIcon className="h-5 w-5" />
     },
     {
       label: "Rename",
       onClick: () => setRenameModal({ isOpen: true, item }),
-      icon: <PencilIcon className="h-5 w-5" />,
+      icon: <PencilIcon className="h-5 w-5" />
     },
     {
       label: "Delete",
       onClick: () => setDeleteModal({ isOpen: true, item, type }),
       icon: <TrashIcon className="h-5 w-5" />,
-      className: "text-red-600",
-    },
+      className: "text-red-600"
+    }
   ];
 
   const hasSelection = useMemo(
     () => selectedItems.files.length > 0 || selectedItems.folders.length > 0,
-    [selectedItems],
+    [selectedItems]
   );
 
   const totalItems = useMemo(
     () =>
       (folderData?.files.length || 0) + (folderData?.sub_folders.length || 0),
-    [folderData],
+    [folderData]
   );
   const totalSelected = useMemo(
     () => selectedItems.files.length + selectedItems.folders.length,
-    [selectedItems],
+    [selectedItems]
   );
 
   useEffect(() => {
@@ -429,7 +429,7 @@ const MyCloudPage: React.FC = () => {
         isOpen={!!deleteModal}
         onClose={() => setDeleteModal(null)}
         onConfirm={confirmDelete}
-        title={deleteModal?.isBulk ? "Delete Selected Items" : `Delete`}
+        title={deleteModal?.isBulk ? "Delete Selected Items" : "Delete"}
       >
         Are you sure you want to delete the selected items? This action cannot
         be undone.

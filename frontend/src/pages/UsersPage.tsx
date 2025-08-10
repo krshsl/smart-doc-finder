@@ -1,7 +1,7 @@
 import {
   PencilIcon,
   TrashIcon,
-  UserPlusIcon,
+  UserPlusIcon
 } from "@heroicons/react/24/outline";
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
@@ -25,7 +25,7 @@ const UsersPage: React.FC = () => {
   }>({ isOpen: false, user: null });
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
 
-  const fetchUsers = useCallback(async () => {
+  const fetchUsers = useCallback(async() => {
     setIsLoading(true);
     try {
       const data = await userService.getUsers(page, search);
@@ -42,7 +42,7 @@ const UsersPage: React.FC = () => {
     fetchUsers();
   }, [fetchUsers]);
 
-  const handleDelete = async () => {
+  const handleDelete = async() => {
     if (!deleteModal.user) return;
     try {
       await userService.deleteUser(deleteModal.user.id);
@@ -53,7 +53,7 @@ const UsersPage: React.FC = () => {
     }
   };
 
-  const confirmBulkDelete = async () => {
+  const confirmBulkDelete = async() => {
     if (selectedUsers.length === 0) return;
     try {
       await userService.bulkDeleteUsers(selectedUsers);
@@ -116,7 +116,7 @@ const UsersPage: React.FC = () => {
                       className="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300"
                       onChange={(e) =>
                         setSelectedUsers(
-                          e.target.checked ? users.map((u) => u.id) : [],
+                          e.target.checked ? users.map((u) => u.id) : []
                         )
                       }
                     />
@@ -156,7 +156,7 @@ const UsersPage: React.FC = () => {
                           setSelectedUsers(
                             e.target.checked
                               ? [...selectedUsers, user.id]
-                              : selectedUsers.filter((id) => id !== user.id),
+                              : selectedUsers.filter((id) => id !== user.id)
                           )
                         }
                       />

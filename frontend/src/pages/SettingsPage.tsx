@@ -1,7 +1,7 @@
 import {
   UserPlusIcon,
   PencilSquareIcon,
-  TrashIcon,
+  TrashIcon
 } from "@heroicons/react/24/outline";
 import React, { useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -23,7 +23,7 @@ const SettingsPage: React.FC = () => {
     return <Outlet />;
   }
 
-  const handleDeleteAccount = async () => {
+  const handleDeleteAccount = async() => {
     setIsActionLoading(true);
     try {
       await api.delete(`/user/${user!.id}`);

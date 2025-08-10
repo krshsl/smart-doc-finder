@@ -1,7 +1,7 @@
 import {
   CloudArrowUpIcon,
   DocumentIcon,
-  FolderIcon,
+  FolderIcon
 } from "@heroicons/react/24/outline";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
@@ -21,20 +21,20 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
   isOpen,
   onClose,
   onSaveFolder,
-  onUploadFiles,
+  onUploadFiles
 }) => {
   const [name, setName] = useState("");
   const [type, setType] = useState<"folder" | "file">("folder");
 
   const onDrop = useCallback(
-    async (acceptedFiles: File[], fileRejections: any[], event: any) => {
+    async(acceptedFiles: File[], fileRejections: any[], event: any) => {
       let allFiles: File[] = [];
       let allPaths: string[] = [];
 
       // This logic handles both drag-and-drop of files/folders and click-to-select
       if (event.dataTransfer && event.dataTransfer.items) {
         const items = Array.from(
-          event.dataTransfer.items as DataTransferItemList,
+          event.dataTransfer.items as DataTransferItemList
         );
         for (const item of items) {
           const entry = item.webkitGetAsEntry();
@@ -49,7 +49,7 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
       if (allFiles.length === 0 && acceptedFiles.length > 0) {
         allFiles = acceptedFiles;
         allPaths = acceptedFiles.map(
-          (file) => (file as any).webkitRelativePath || file.name,
+          (file) => (file as any).webkitRelativePath || file.name
         );
       }
 
@@ -58,27 +58,27 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
         resetAndClose();
       }
     },
-    [onUploadFiles],
+    [onUploadFiles]
   );
 
   // Dropzone for the "Folder" tab - configured to accept directories
   const {
     getRootProps: getFolderRootProps,
     getInputProps: getFolderInputProps,
-    isDragActive: isFolderDragActive,
+    isDragActive: isFolderDragActive
   } = useDropzone({
     onDrop,
-    noClick: false, // Allow click to open folder selector
+    noClick: false // Allow click to open folder selector
   });
 
   // Dropzone for the "File" tab - configured for files only
   const {
     getRootProps: getFileRootProps,
     getInputProps: getFileInputProps,
-    isDragActive: isFileDragActive,
+    isDragActive: isFileDragActive
   } = useDropzone({
     onDrop,
-    multiple: true,
+    multiple: true
   });
 
   const handleSave = () => {
@@ -169,13 +169,13 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
                         isFolderDragActive
                           ? "border-blue-500 bg-blue-50"
                           : "border-gray-300"
-                      }`,
+                      }`
                     })}
                   >
                     <input
                       {...getFolderInputProps({
                         directory: "true",
-                        webkitdirectory: "true",
+                        webkitdirectory: "true"
                       })}
                     />
                     <CloudArrowUpIcon className="h-8 w-8 text-blue-500" />
@@ -193,7 +193,7 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
                       isFileDragActive
                         ? "border-blue-500 bg-blue-50"
                         : "border-gray-300"
-                    }`,
+                    }`
                   })}
                 >
                   <input {...getFileInputProps()} />

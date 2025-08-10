@@ -1,8 +1,8 @@
-import * as Dialog from "@radix-ui/react-dialog";
 import {
   CheckCircleIcon,
-  ExclamationTriangleIcon,
+  ExclamationTriangleIcon
 } from "@heroicons/react/24/outline";
+import * as Dialog from "@radix-ui/react-dialog";
 import React from "react";
 
 interface ModalProps {
@@ -18,7 +18,7 @@ export const Modal: React.FC<ModalProps> = ({
   onClose,
   title,
   type = "success",
-  children,
+  children
 }) => {
   const Icon = type === "success" ? CheckCircleIcon : ExclamationTriangleIcon;
   const iconColor = type === "success" ? "text-green-500" : "text-red-500";

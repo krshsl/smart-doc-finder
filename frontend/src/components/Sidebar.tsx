@@ -4,7 +4,7 @@ import {
   Cog6ToothIcon,
   UserCircleIcon,
   ArrowLeftStartOnRectangleIcon,
-  UsersIcon,
+  UsersIcon
 } from "@heroicons/react/24/outline";
 import React, { useState, useEffect, useCallback } from "react";
 import { NavLink } from "react-router-dom";
@@ -37,20 +37,20 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
       to: "/my-cloud",
       label: "My cloud",
       icon: <CloudIcon className="h-6 w-6" />,
-      show: true,
+      show: true
     },
     {
       to: "/upload-files",
       label: "Upload files",
       icon: <CloudArrowUpIcon className="h-6 w-6" />,
-      show: user.role !== "guest",
+      show: user.role !== "guest"
     },
     {
       to: "/users",
       label: "Manage Users",
       icon: <UsersIcon className="h-6 w-6" />,
-      show: user.role === "admin",
-    },
+      show: user.role === "admin"
+    }
   ];
 
   const getLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -60,7 +60,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
         : "text-gray-300 hover:bg-blue-800 hover:text-white"
     }`;
 
-  const fetchStorage = useCallback(async () => {
+  const fetchStorage = useCallback(async() => {
     if (user) {
       try {
         const usage = await cloudService.getStorageUsage(user.id!);
@@ -78,12 +78,9 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
     fetchStorage();
 
     eventBus.on("apiSuccess", fetchStorage);
-    eventBus.on("userUpdate", fetchStorage);
 
     return () => {
-      // Clean up the event listeners when the component unmounts
       eventBus.remove("apiSuccess", fetchStorage);
-      eventBus.remove("userUpdate", fetchStorage);
     };
   }, [fetchStorage]);
 
@@ -122,7 +119,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
             <div
               className="h-2 rounded-full bg-blue-300 transition-all duration-500"
               style={{
-                width: `${storagePercentage > 100 ? 100 : storagePercentage}%`,
+                width: `${storagePercentage > 100 ? 100 : storagePercentage}%`
               }}
             ></div>
           </div>
@@ -140,7 +137,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
           </li>
           <li>
             <button
-              onClick={async () => {
+              onClick={async() => {
                 await logout();
               }}
               className="flex w-full items-center rounded-lg px-4 py-3 font-medium text-gray-300 transition-colors hover:bg-blue-800 hover:text-white"

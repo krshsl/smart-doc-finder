@@ -1,11 +1,11 @@
 export async function getFilesFromEntry(
   entry: any,
-  path = "",
+  path = ""
 ): Promise<{ files: File[]; paths: string[] }> {
   if (entry.isFile) {
     return new Promise((resolve) => {
       entry.file((file: File) =>
-        resolve({ files: [file], paths: [path + file.name] }),
+        resolve({ files: [file], paths: [path + file.name] })
       );
     });
   }
@@ -13,7 +13,7 @@ export async function getFilesFromEntry(
   if (entry.isDirectory) {
     const dirReader = entry.createReader();
     const entries = await new Promise<any[]>((resolve) =>
-      dirReader.readEntries(resolve),
+      dirReader.readEntries(resolve)
     );
     let allFiles: File[] = [];
     let allPaths: string[] = [];

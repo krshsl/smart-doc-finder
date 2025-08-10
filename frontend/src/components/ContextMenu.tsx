@@ -15,7 +15,7 @@ interface ContextMenuProps {
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({
   items,
-  children,
+  children
 }) => {
   return (
     <ContextMenuPrimitive.Root>
