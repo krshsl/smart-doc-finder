@@ -21,9 +21,10 @@ class Folder(BaseDocument):
         from .file import File
 
         total_size = self.folder_size
-        total_size += await File.find(
-            File.folder == DBRef(Folder.__name__, self.id)
-        ).sum(File.file_size)
+        file_size = await File.find(File.folder == DBRef(Folder.__name__, self.id)).sum(
+            File.file_size
+        )
+        total_size = total_size + file_size if file_size else total_size
         child_folders = await Folder.find(
             Folder.parent == DBRef(Folder.__name__, self.id)
         ).to_list()
@@ -51,7 +52,7 @@ class Folder(BaseDocument):
     async def _to_dict(
         self, include_refs=False, include_parents=False, include_children=False
     ):
-        folders = {
+        folder = {
             "id": str(self.id),
             "name": self.name,
             "folder_size": self.folder_size,
@@ -75,11 +76,11 @@ class Folder(BaseDocument):
                     for s in sub_folders
                 )
             )
-            folders["files"] = files_list
-            folders["sub_folders"] = sub_folders_list
+            folder["files"] = files_list
+            folder["sub_folders"] = sub_folders_list
 
-        if include_parents and self.parent:
+        if self.parent:
             parent: Folder = await self.parent.fetch()
-            folders["parent"] = await parent._to_dict(include_parents=True)
+            folder["parent"] = await parent._to_dict(include_parents=include_parents)
 
-        return folders
+        return folder

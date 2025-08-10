@@ -16,6 +16,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (formData: FormData) => Promise<void>;
   logout: (skipApiCall?: boolean) => Promise<void>;
+  updateToken: (newToken: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -39,7 +40,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   );
   const [isLoading, setIsLoading] = useState(true);
 
-  const logout = async (skipApiCall: boolean = false) => {
+  const logout = async (skipApiCall = false) => {
     if (!skipApiCall) {
       try {
         await api.post("/logout");
@@ -53,9 +54,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     eventBus.dispatch("userUpdate", null);
   };
 
+  const updateToken = (access_token: string) => {
+    localStorage.setItem("authToken", access_token);
+    setToken(access_token);
+    const decodedUser = decodeToken(access_token);
+    if (decodedUser) {
+      setUser(decodedUser);
+    } else {
+      throw new Error("Received an invalid token from the server.");
+    }
+  };
+
   useEffect(() => {
     setupInterceptors();
-    const handleLogoutEvent = () => logout();
+    const handleLogoutEvent = () => logout(true);
     eventBus.on("logout", handleLogoutEvent);
 
     return () => {
@@ -71,7 +83,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
           setUser(decodedUser);
           eventBus.dispatch("userUpdate", decodedUser);
         } else {
-          logout();
+          logout(true);
         }
       } else {
         setUser(null);
@@ -79,7 +91,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       }
     } catch (error) {
       console.error("Auth check failed:", error);
-      logout();
+      logout(true);
     } finally {
       setIsLoading(false);
     }
@@ -97,21 +109,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     const { access_token } = response.data;
 
     if (access_token) {
-      localStorage.setItem("authToken", access_token);
-      setToken(access_token);
-      const decodedUser = decodeToken(access_token);
-      if (decodedUser) {
-        setUser(decodedUser);
-      } else {
-        throw new Error("Received an invalid token from the server.");
-      }
+      updateToken(access_token);
     } else {
       throw new Error("Login failed: No access token received from server.");
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, logout }}>
+    <AuthContext.Provider
+      value={{ user, token, isLoading, login, logout, updateToken }}
+    >
       {!isLoading && children}
     </AuthContext.Provider>
   );

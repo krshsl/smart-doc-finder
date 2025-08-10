@@ -4,40 +4,53 @@ import {
   Cog6ToothIcon,
   UserCircleIcon,
   ArrowLeftStartOnRectangleIcon,
-  UsersIcon
+  UsersIcon,
 } from "@heroicons/react/24/outline";
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { NavLink } from "react-router-dom";
 
 import { useAuth } from "../auth/AuthContext";
+import * as cloudService from "../services/cloudService";
+import eventBus from "../services/eventBus";
 import { User } from "../types";
 
 interface SidebarProps {
   user: User;
 }
 
+const formatBytes = (bytes: number, decimals = 2) => {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
+};
+
 const Sidebar: React.FC<SidebarProps> = ({ user }) => {
   const { logout } = useAuth();
+  const [storageUsed, setStorageUsed] = useState<number>(0);
+  const [storageQuota, setStorageQuota] = useState<number>(0);
 
   const navItems = [
     {
       to: "/my-cloud",
       label: "My cloud",
       icon: <CloudIcon className="h-6 w-6" />,
-      show: true
+      show: true,
     },
     {
       to: "/upload-files",
       label: "Upload files",
       icon: <CloudArrowUpIcon className="h-6 w-6" />,
-      show: user.role !== "guest"
+      show: user.role !== "guest",
     },
     {
       to: "/users",
       label: "Manage Users",
       icon: <UsersIcon className="h-6 w-6" />,
-      show: user.role === "admin"
-    }
+      show: user.role === "admin",
+    },
   ];
 
   const getLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -46,6 +59,35 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
         ? "bg-blue-600 text-white"
         : "text-gray-300 hover:bg-blue-800 hover:text-white"
     }`;
+
+  const fetchStorage = useCallback(async () => {
+    if (user) {
+      try {
+        const usage = await cloudService.getStorageUsage(user.id!);
+        setStorageUsed(usage.storage_used);
+        setStorageQuota(usage.storage_quota);
+      } catch (error) {
+        console.error("Failed to fetch storage usage:", error);
+      }
+    } else {
+      setStorageUsed(0);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchStorage();
+
+    eventBus.on("apiSuccess", fetchStorage);
+    eventBus.on("userUpdate", fetchStorage);
+
+    return () => {
+      // Clean up the event listeners when the component unmounts
+      eventBus.remove("apiSuccess", fetchStorage);
+      eventBus.remove("userUpdate", fetchStorage);
+    };
+  }, [fetchStorage]);
+
+  const storagePercentage = (storageUsed / storageQuota) * 100;
 
   return (
     <aside className="flex w-64 flex-col bg-[#2a457a] p-4 text-white">
@@ -73,7 +115,23 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
         </ul>
       </nav>
       <div>
-        <ul className="space-y-2">
+        {/* Storage Usage Display */}
+        <div className="px-4 py-2">
+          <span className="text-xs font-semibold text-blue-200">Storage</span>
+          <div className="mt-2 h-2 w-full rounded-full bg-blue-900">
+            <div
+              className="h-2 rounded-full bg-blue-300 transition-all duration-500"
+              style={{
+                width: `${storagePercentage > 100 ? 100 : storagePercentage}%`,
+              }}
+            ></div>
+          </div>
+          <div className="mt-1 flex justify-between text-xs text-blue-200">
+            <span>{formatBytes(storageUsed)}</span>
+            <span>{formatBytes(storageQuota)}</span>
+          </div>
+        </div>
+        <ul className="mt-2 space-y-2">
           <li>
             <NavLink to="/settings" className={getLinkClass}>
               <Cog6ToothIcon className="h-6 w-6" />
@@ -82,7 +140,9 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
           </li>
           <li>
             <button
-              onClick={logout}
+              onClick={async () => {
+                await logout();
+              }}
               className="flex w-full items-center rounded-lg px-4 py-3 font-medium text-gray-300 transition-colors hover:bg-blue-800 hover:text-white"
             >
               <ArrowLeftStartOnRectangleIcon className="h-6 w-6" />

@@ -10,7 +10,7 @@ eventBus.on("userUpdate", (user) => {
 });
 
 const api = axios.create({
-  baseURL: API_BASE_URL
+  baseURL: API_BASE_URL,
 });
 
 export const setupInterceptors = () => {
@@ -27,8 +27,8 @@ export const setupInterceptors = () => {
       return Promise.reject(
         new AxiosError(
           "Guests are not allowed to perform this action.",
-          "ERR_FORBIDDEN"
-        )
+          "ERR_FORBIDDEN",
+        ),
       );
     }
 
@@ -36,13 +36,23 @@ export const setupInterceptors = () => {
   });
 
   api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+      if (
+        response.config.url &&
+        !response.config.url.includes("/login") &&
+        !response.config.url.includes("/logout") &&
+        !response.config.url.includes("/storage")
+      ) {
+        eventBus.dispatch("apiSuccess");
+      }
+      return response;
+    },
     (error) => {
       if (error.response && error.response.status === 401) {
         eventBus.dispatch("logout");
       }
       return Promise.reject(error);
-    }
+    },
   );
 };
 
