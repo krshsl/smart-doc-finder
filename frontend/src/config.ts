@@ -1,6 +1,6 @@
-const isDevelopment = process.env.NODE_ENV === "development";
+const isDevelopment = import.meta.env.VITE_NODE_ENV === "development";
 
-export const API_BASE_URL = isDevelopment ? "/api" : "https://api.myapp.com"; // update this
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const guestUser = {
   username: "guest",

@@ -16,12 +16,19 @@ const LoginPage: React.FC = () => {
     setIsLoading(true);
     setError(null);
     const formData = new FormData(e.currentTarget);
+    let login_success = true;
     try {
-      login(formData);
-      navigate("/");
-    } catch (err) {
-      setError("Failed to log in. Please check your credentials.");
+      await login(formData);
+    } catch (err: any) {
+      login_success = false;
+      const errorDetail = err.response?.data?.detail;
+      if (typeof errorDetail === "string") {
+        setError(errorDetail);
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
     } finally {
+      if (login_success) navigate("/");
       setIsLoading(false);
     }
   };
@@ -29,15 +36,22 @@ const LoginPage: React.FC = () => {
   const handleGuestLogin = async() => {
     setIsLoading(true);
     setError(null);
+    let login_success = true;
     try {
       const guestFormData = new FormData();
       guestFormData.append("username", guestUser.username);
       guestFormData.append("password", guestUser.password);
-      login(guestFormData);
-      navigate("/");
-    } catch (err) {
-      setError("Failed to log in as guest. Please try again.");
+      await login(guestFormData);
+    } catch (err: any) {
+      login_success = false;
+      const errorDetail = err.response?.data?.detail;
+      if (typeof errorDetail === "string") {
+        setError(errorDetail);
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
     } finally {
+      if (login_success) navigate("/");
       setIsLoading(false);
     }
   };
