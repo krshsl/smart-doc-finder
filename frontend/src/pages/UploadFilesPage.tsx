@@ -1,8 +1,4 @@
-import {
-  CloudArrowUpIcon,
-  DocumentIcon,
-  FolderIcon
-} from "@heroicons/react/24/outline";
+import { CloudArrowUpIcon } from "@heroicons/react/24/outline";
 import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
 import React, { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
@@ -35,17 +31,18 @@ const UploadFilesPage: React.FC = () => {
 
       if (successful_uploads?.length > 0) {
         messageLines.push(
-          `${successful_uploads.length} file(s) uploaded successfully.`
+          `${successful_uploads.length} item(s) uploaded successfully.`
         );
       }
 
       if (failed_uploads?.length > 0) {
-        modalType = "error";
+        modalType =
+          failed_uploads.length === files.length ? "error" : "success";
         const failedNames = failed_uploads
           .map((f: any) => f.file_name)
           .join(", ");
         messageLines.push(
-          `\n${failed_uploads.length} file(s) failed to upload: ${failedNames}.`
+          `\n${failed_uploads.length} item(s) failed to upload: ${failedNames}.`
         );
       }
 
@@ -114,47 +111,59 @@ const UploadFilesPage: React.FC = () => {
         <p className="whitespace-pre-wrap">{modalState?.message}</p>
       </Modal>
 
-      <div className="p-4 sm:p-6">
-        <h1 className="text-3xl font-bold text-gray-800">Upload Items</h1>
+      <div className="p-6 lg:p-8">
+        <h1 className="text-4xl font-bold text-slate-800">Upload to Cloud</h1>
+        <p className="mt-2 text-base text-slate-500">
+          Add new files and folders to your cloud storage.
+        </p>
 
-        <RadioGroupPrimitive.Root
-          value={uploadType}
-          onValueChange={(v) => setUploadType(v as any)}
-          className="mt-6 flex max-w-md space-x-4"
-        >
-          <RadioGroupPrimitive.Item
-            value="file"
-            className="flex-1 cursor-pointer items-center justify-center rounded-lg px-5 py-4 text-center shadow-md data-[state=checked]:bg-blue-600 data-[state=checked]:text-white data-[state=unchecked]:bg-white data-[state=unchecked]:text-gray-900"
+        <div className="mt-8 max-w-4xl mx-auto">
+          <div
+            {...getRootProps()}
+            className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-white p-12 text-center transition-all duration-300 ease-in-out cursor-pointer
+                ${
+    isDragActive
+      ? "border-brand-500 bg-brand-50 scale-105 shadow-2xl shadow-brand-500/20"
+      : "border-slate-300 hover:border-brand-400 hover:bg-slate-50"
+    }`}
           >
-            <DocumentIcon className="mr-3 inline h-6 w-6" /> Upload Files
-          </RadioGroupPrimitive.Item>
-          <RadioGroupPrimitive.Item
-            value="folder"
-            className="flex-1 cursor-pointer items-center justify-center rounded-lg px-5 py-4 text-center shadow-md data-[state=checked]:bg-blue-600 data-[state=checked]:text-white data-[state=unchecked]:bg-white data-[state=unchecked]:text-gray-900"
-          >
-            <FolderIcon className="mr-3 inline h-6 w-6" /> Upload Folder
-          </RadioGroupPrimitive.Item>
-        </RadioGroupPrimitive.Root>
+            <input
+              {...getInputProps(
+                uploadType === "folder"
+                  ? { directory: "true", webkitdirectory: "true" }
+                  : { multiple: true }
+              )}
+            />
+            <div className="absolute top-6 right-6">
+              <RadioGroupPrimitive.Root
+                value={uploadType}
+                onValueChange={(v) => setUploadType(v as any)}
+                className="flex rounded-full bg-slate-100 p-1 border border-slate-200"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <RadioGroupPrimitive.Item
+                  value="file"
+                  className="group rounded-full px-4 py-1.5 text-sm font-medium cursor-pointer transition-colors data-[state=checked]:bg-brand-600 data-[state=checked]:text-white data-[state=unchecked]:text-slate-600 data-[state=unchecked]:hover:bg-white"
+                >
+                  Files
+                </RadioGroupPrimitive.Item>
+                <RadioGroupPrimitive.Item
+                  value="folder"
+                  className="group rounded-full px-4 py-1.5 text-sm font-medium cursor-pointer transition-colors data-[state=checked]:bg-brand-600 data-[state=checked]:text-white data-[state=unchecked]:text-slate-600 data-[state=unchecked]:hover:bg-white"
+                >
+                  Folder
+                </RadioGroupPrimitive.Item>
+              </RadioGroupPrimitive.Root>
+            </div>
 
-        <div
-          {...getRootProps()}
-          className={`mt-4 flex h-64 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-4 border-dashed bg-white transition-colors ${
-            isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300"
-          }`}
-        >
-          <input
-            {...getInputProps(
-              uploadType === "folder"
-                ? { directory: "true", webkitdirectory: "true" }
-                : { multiple: true }
-            )}
-          />
-          <CloudArrowUpIcon className="h-16 w-16 text-blue-500" />
-          <p className="mt-4 text-center text-lg font-semibold text-gray-700">
-            {isDragActive
-              ? "Drop items here..."
-              : `Drag & drop or click to select ${uploadType === "folder" ? "a folder" : "files"}`}
-          </p>
+            <CloudArrowUpIcon className="h-20 w-20 text-brand-500 transition-transform duration-300 group-hover:scale-110" />
+            <h3 className="mt-4 text-2xl font-bold text-slate-800">
+              {isDragActive
+                ? "Drop to upload"
+                : `Select a ${uploadType} to upload`}
+            </h3>
+            <p className="mt-2 text-slate-500">or drag and drop it here</p>
+          </div>
         </div>
       </div>
     </>

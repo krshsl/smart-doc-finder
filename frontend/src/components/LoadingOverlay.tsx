@@ -12,8 +12,8 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="h-16 w-16 animate-spin rounded-full border-8 border-solid border-white border-t-transparent"></div>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white bg-opacity-75 backdrop-blur-sm">
+      <div className="h-12 w-12 animate-spin rounded-full border-4 border-solid border-brand-500 border-t-transparent"></div>
     </div>
   );
 };

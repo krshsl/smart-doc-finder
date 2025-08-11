@@ -1,7 +1,7 @@
 import {
   CloudArrowUpIcon,
-  DocumentIcon,
-  FolderIcon
+  FolderPlusIcon,
+  DocumentPlusIcon
 } from "@heroicons/react/24/outline";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
@@ -31,7 +31,6 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
       let allFiles: File[] = [];
       let allPaths: string[] = [];
 
-      // This logic handles both drag-and-drop of files/folders and click-to-select
       if (event.dataTransfer && event.dataTransfer.items) {
         const items = Array.from(
           event.dataTransfer.items as DataTransferItemList
@@ -61,25 +60,16 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
     [onUploadFiles]
   );
 
-  // Dropzone for the "Folder" tab - configured to accept directories
   const {
     getRootProps: getFolderRootProps,
     getInputProps: getFolderInputProps,
     isDragActive: isFolderDragActive
-  } = useDropzone({
-    onDrop,
-    noClick: false // Allow click to open folder selector
-  });
-
-  // Dropzone for the "File" tab - configured for files only
+  } = useDropzone({ onDrop, noClick: false });
   const {
     getRootProps: getFileRootProps,
     getInputProps: getFileInputProps,
     isDragActive: isFileDragActive
-  } = useDropzone({
-    onDrop,
-    multiple: true
-  });
+  } = useDropzone({ onDrop, multiple: true });
 
   const handleSave = () => {
     if (type === "folder" && name.trim()) {
@@ -99,126 +89,121 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
   return (
     <Dialog.Root open={isOpen} onOpenChange={resetAndClose}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-10 bg-black/25 data-[state=open]:animate-in data-[state=closed]:animate-out" />
-        <div className="fixed inset-0 z-10 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4 text-center">
-            <Dialog.Content className="w-full max-w-md transform rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95">
-              <Dialog.Title asChild>
-                <h3 className="text-lg font-medium leading-6 text-gray-900">
-                  Create New
-                </h3>
-              </Dialog.Title>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/30 data-[state=open]:animate-in data-[state=closed]:animate-out" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 transform rounded-xl bg-white p-6 text-left align-middle shadow-xl transition-all data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95">
+          <Dialog.Title asChild>
+            <h3 className="text-xl font-semibold leading-6 text-slate-900">
+              Create New
+            </h3>
+          </Dialog.Title>
 
-              <RadioGroupPrimitive.Root
-                value={type}
-                onValueChange={(v) => setType(v as any)}
-                className="mt-4 flex space-x-4"
+          <RadioGroupPrimitive.Root
+            value={type}
+            onValueChange={(v) => setType(v as any)}
+            className="mt-6 grid grid-cols-2 gap-4"
+          >
+            <RadioGroupPrimitive.Item
+              value="folder"
+              className="group rounded-lg p-4 text-center cursor-pointer transition ring-1 ring-slate-200 data-[state=checked]:ring-2 data-[state=checked]:ring-brand-500 data-[state=unchecked]:hover:bg-slate-50"
+            >
+              <FolderPlusIcon className="mx-auto h-8 w-8 text-slate-400 group-data-[state=checked]:text-brand-500 transition" />
+              <span className="mt-2 block font-medium text-slate-700 group-data-[state=checked]:text-brand-600">
+                New Folder
+              </span>
+            </RadioGroupPrimitive.Item>
+            <RadioGroupPrimitive.Item
+              value="file"
+              className="group rounded-lg p-4 text-center cursor-pointer transition ring-1 ring-slate-200 data-[state=checked]:ring-2 data-[state=checked]:ring-brand-500 data-[state=unchecked]:hover:bg-slate-50"
+            >
+              <DocumentPlusIcon className="mx-auto h-8 w-8 text-slate-400 group-data-[state=checked]:text-brand-500 transition" />
+              <span className="mt-2 block font-medium text-slate-700 group-data-[state=checked]:text-brand-600">
+                Upload
+              </span>
+            </RadioGroupPrimitive.Item>
+          </RadioGroupPrimitive.Root>
+
+          {type === "folder" ? (
+            <div className="mt-6">
+              <label
+                htmlFor="itemName"
+                className="block text-sm font-medium text-slate-700"
               >
-                <RadioGroupPrimitive.Item
-                  value="folder"
-                  className="flex-1 cursor-pointer items-center justify-center rounded-lg px-5 py-4 text-center shadow-md data-[state=checked]:bg-blue-600 data-[state=checked]:text-white data-[state=unchecked]:bg-white data-[state=unchecked]:text-gray-900"
+                New Folder Name
+              </label>
+              <div className="mt-2 flex gap-3">
+                <input
+                  type="text"
+                  id="itemName"
+                  placeholder="e.g. Vacation Photos"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="block w-full rounded-md border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm"
+                  onKeyDown={(e) => e.key === "Enter" && handleSave()}
+                />
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={!name.trim()}
+                  className="rounded-md border border-transparent bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <FolderIcon className="mr-3 inline h-6 w-6" /> Folder
-                </RadioGroupPrimitive.Item>
-                <RadioGroupPrimitive.Item
-                  value="file"
-                  className="flex-1 cursor-pointer items-center justify-center rounded-lg px-5 py-4 text-center shadow-md data-[state=checked]:bg-blue-600 data-[state=checked]:text-white data-[state=unchecked]:bg-white data-[state=unchecked]:text-gray-900"
-                >
-                  <DocumentIcon className="mr-3 inline h-6 w-6" /> File Upload
-                </RadioGroupPrimitive.Item>
-              </RadioGroupPrimitive.Root>
-
-              {type === "folder" ? (
-                <div className="mt-4">
-                  <div>
-                    <label
-                      htmlFor="itemName"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      New Folder Name
-                    </label>
-                    <div className="mt-1 flex gap-2">
-                      <input
-                        type="text"
-                        id="itemName"
-                        placeholder="Folder Name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="flex-grow rounded-md pl-4  border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleSave}
-                        disabled={!name.trim()}
-                        className="rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-opacity-50"
-                      >
-                        Create
-                      </button>
-                    </div>
-                  </div>
-                  <div className="my-4 flex items-center">
-                    <div className="flex-grow border-t border-gray-300"></div>
-                    <span className="mx-4 flex-shrink text-xs text-gray-500">
-                      OR
-                    </span>
-                    <div className="flex-grow border-t border-gray-300"></div>
-                  </div>
-                  <div
-                    {...getFolderRootProps({
-                      className: `flex h-24 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors ${
-                        isFolderDragActive
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-300"
-                      }`
-                    })}
-                  >
-                    <input
-                      {...getFolderInputProps({
-                        directory: "true",
-                        webkitdirectory: "true"
-                      })}
-                    />
-                    <CloudArrowUpIcon className="h-8 w-8 text-blue-500" />
-                    <p className="mt-2 text-center text-sm font-semibold text-gray-700">
-                      {isFolderDragActive
-                        ? "Drop folder here..."
-                        : "Drag & drop or click to upload a folder"}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div
-                  {...getFileRootProps({
-                    className: `mt-4 flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors ${
-                      isFileDragActive
-                        ? "border-blue-500 bg-blue-50"
-                        : "border-gray-300"
-                    }`
-                  })}
-                >
-                  <input {...getFileInputProps()} />
-                  <CloudArrowUpIcon className="h-10 w-10 text-blue-500" />
-                  <p className="mt-2 text-center text-sm font-semibold text-gray-700">
-                    {isFileDragActive
-                      ? "Drop files here..."
-                      : "Drag & drop or click to select files"}
-                  </p>
-                </div>
-              )}
-
-              <div className="mt-6">
-                <Dialog.Close asChild>
-                  <button
-                    type="button"
-                    className="w-full rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2"
-                  >
-                    Cancel
-                  </button>
-                </Dialog.Close>
+                  Create
+                </button>
               </div>
-            </Dialog.Content>
+            </div>
+          ) : (
+            <div className="mt-6 space-y-4">
+              <div
+                {...getFileRootProps({
+                  className: `flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors ${isFileDragActive ? "border-brand-500 bg-brand-50" : "border-slate-300 hover:border-slate-400"}`
+                })}
+              >
+                <input {...getFileInputProps()} />
+                <CloudArrowUpIcon className="h-10 w-10 text-brand-500" />
+                <p className="mt-2 text-center text-sm font-semibold text-slate-700">
+                  {isFileDragActive
+                    ? "Drop files here..."
+                    : "Drag & drop or click to select files"}
+                </p>
+              </div>
+              <div className="my-2 flex items-center">
+                <div className="flex-grow border-t border-slate-200"></div>
+                <span className="mx-4 flex-shrink text-xs text-slate-400">
+                  OR
+                </span>
+                <div className="flex-grow border-t border-slate-200"></div>
+              </div>
+              <div
+                {...getFolderRootProps({
+                  className: `flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors ${isFolderDragActive ? "border-brand-500 bg-brand-50" : "border-slate-300 hover:border-slate-400"}`
+                })}
+              >
+                <input
+                  {...getFolderInputProps({
+                    directory: "true",
+                    webkitdirectory: "true"
+                  })}
+                />
+                <CloudArrowUpIcon className="h-10 w-10 text-brand-500" />
+                <p className="mt-2 text-center text-sm font-semibold text-slate-700">
+                  {isFolderDragActive
+                    ? "Drop folder here..."
+                    : "Drag & drop or click to upload a folder"}
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-8">
+            <Dialog.Close asChild>
+              <button
+                type="button"
+                className="w-full rounded-md bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2"
+              >
+                Cancel
+              </button>
+            </Dialog.Close>
           </div>
-        </div>
+        </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
   );

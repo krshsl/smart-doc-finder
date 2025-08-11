@@ -8,48 +8,52 @@ const Navbar: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [query, setQuery] = useState<string>(searchParams.get("q") || "");
   const [aiSearch, setAiSearch] = useState<boolean>(
-    searchParams.get("ai") === "1"
+    window.location.pathname.includes("/search/ai")
   );
 
   useEffect(() => {
     setQuery(searchParams.get("q") || "");
-    setAiSearch(searchParams.get("ai") === "1");
+    setAiSearch(window.location.pathname.includes("/search/ai"));
   }, [searchParams]);
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
     if (query.trim()) {
       const basePath = aiSearch ? "/search/ai" : "/search";
-      const searchUrl = `${basePath}?q=${encodeURIComponent(query.trim())}${
-        aiSearch ? "&ai=1" : ""
-      }`;
+      const searchUrl = `${basePath}?q=${encodeURIComponent(query.trim())}`;
+      navigate(searchUrl);
+    }
+  };
+
+  const handleSwitchChange = (checked: boolean) => {
+    setAiSearch(checked);
+    if (query.trim()) {
+      const basePath = checked ? "/search/ai" : "/search";
+      const searchUrl = `${basePath}?q=${encodeURIComponent(query.trim())}`;
       navigate(searchUrl);
     }
   };
 
   return (
-    <header className="flex-shrink-0 border-b border-gray-200 bg-white">
-      <div className="flex h-16 items-center justify-center px-4 sm:px-6 lg:px-8">
-        <div className="w-full max-w-2xl">
+    <header className="flex-shrink-0 bg-white/75 backdrop-blur-lg border-b border-slate-200">
+      <div className="flex h-20 items-center justify-center px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-3xl">
           <form
             onSubmit={handleSearch}
-            className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2 shadow-sm border border-gray-200"
+            className="flex items-center gap-4 rounded-full bg-white px-5 py-3 shadow-md shadow-slate-200/50 border border-slate-200"
           >
-            <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 flex-shrink-0" />
-
+            <MagnifyingGlassIcon className="h-5 w-5 text-slate-400 flex-shrink-0" />
             <input
               id="search"
               name="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="flex-1 bg-transparent border-none focus:outline-none text-gray-900 placeholder:text-gray-400 sm:text-sm"
-              placeholder="Search for files and folders"
+              className="flex-1 bg-transparent border-none p-0 focus:ring-0 text-slate-800 placeholder:text-slate-400 text-base"
+              placeholder="Search files, folders, or ask AI..."
               type="search"
             />
-
-            <div className="w-px h-6 bg-gray-200 mx-3" />
-
-            <div className="flex items-center gap-2 relative mr-1">
+            <div className="w-px h-6 bg-slate-200" />
+            <div className="flex items-center gap-2.5 relative">
               {aiSearch && (
                 <>
                   <span className="absolute -top-1.5 rotate-3 -left-2.5 text-blue-500 text-xs animate-sparkle">
@@ -60,27 +64,27 @@ const Navbar: React.FC = () => {
                   </span>
                 </>
               )}
-
-              <span
-                className={`text-xs font-medium whitespace-nowrap transition-colors ${
-                  aiSearch ? "text-blue-600" : "text-gray-600"
+              <label
+                htmlFor="ai-search"
+                className={`text-sm font-medium whitespace-nowrap transition-colors pr-1 ${
+                  aiSearch ? "text-brand-600" : "text-slate-600"
                 }`}
               >
-                {aiSearch ? "AI On" : "AI Off"}
-              </span>
+                AI Search
+              </label>
               <Switch.Root
-                className={`relative w-[40px] h-[22px] rounded-full border transition-colors duration-200 ${
+                className={`relative w-[42px] h-[24px] rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 ${
                   aiSearch
-                    ? "bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 border-purple-50"
-                    : "bg-gray-200 border-gray-300"
+                    ? "bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"
+                    : "bg-slate-300"
                 }`}
                 id="ai-search"
                 checked={aiSearch}
-                onCheckedChange={(checked: boolean) => setAiSearch(checked)}
+                onCheckedChange={handleSwitchChange}
               >
                 <Switch.Thumb
-                  className={`block w-[18px] h-[18px] bg-white rounded-full shadow transform transition-transform duration-200 ${
-                    aiSearch ? "translate-x-[18px]" : "translate-x-[2px]"
+                  className={`block w-[20px] h-[20px] bg-white rounded-full shadow-lg transform transition-transform duration-200 ${
+                    aiSearch ? "translate-x-[19px]" : "translate-x-[2px]"
                   }`}
                 />
               </Switch.Root>
