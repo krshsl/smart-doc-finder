@@ -4,7 +4,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { FolderIcon, DocumentIcon } from "@heroicons/react/24/solid";
 import React, { useEffect, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 
 import { ContextMenu } from "../components/ContextMenu";
 import { FileViewerModal } from "../components/FileViewerModal";
@@ -16,6 +16,7 @@ import { FileItem, FolderItem } from "../types";
 const SearchPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const query = searchParams.get("q");
 
   const [results, setResults] = useState<{
@@ -51,7 +52,7 @@ const SearchPage: React.FC = () => {
       setResults({ files: [], folders: [] });
       setIsLoading(false);
     }
-  }, [query]);
+  }, [query, location.key]);
 
   const handleOpenFile = async (item: FileItem) => {
     setIsActionLoading(true);
@@ -195,8 +196,13 @@ const SearchPage: React.FC = () => {
                     >
                       <div
                         onDoubleClick={() => handleOpenFile(file)}
-                        className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-transparent bg-white p-4 text-center shadow-sm transition-all hover:border-blue-500 hover:shadow-md"
+                        className="relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-transparent bg-white p-4 text-center shadow-sm transition-all hover:border-blue-500 hover:shadow-md"
                       >
+                        {isAiSearch && typeof file.score === "number" && (
+                          <div className="absolute top-0 right-0 rounded-bl-lg bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">
+                            {(file.score * 100).toFixed(0)}%
+                          </div>
+                        )}
                         <DocumentIcon className="h-16 w-16 text-gray-500" />
                         <span className="mt-2 block truncate text-sm font-medium text-gray-900">
                           {file.file_name}

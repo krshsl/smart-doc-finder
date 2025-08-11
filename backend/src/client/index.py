@@ -18,11 +18,11 @@ async def init_search_index(env: SimpleNamespace):
             "mappings": {
                 "dynamic": False,
                 "fields": {
-                    "owner.id": {"type": "objectId"},
+                    "owner": {"type": "document", "dynamic": True},
                     "embedding": {
                         "type": "knnVector",
                         "dimensions": 384,
-                        "similarity": "cosine",
+                        "similarity": "euclidean",
                     },
                 },
             }

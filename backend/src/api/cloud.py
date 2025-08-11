@@ -1,3 +1,4 @@
+import hashlib
 import zipfile
 from io import BytesIO
 from typing import List
@@ -96,6 +97,7 @@ async def bulk_upload(
         file_path = file_paths[i]
         file_name = file.filename
         contents = file_contents_map[i]
+        content_hash = hashlib.sha256(contents).hexdigest()
         gridfs_id = None
 
         try:
@@ -149,10 +151,11 @@ async def bulk_upload(
                 folder=current_parent_folder,
                 tags=tags,
                 gridfs_id=str(gridfs_id),
+                content_hash=content_hash,
             )
             await new_file.insert()
             background_tasks.add_task(
-                ingest_file_to_redis, r_client, new_file, current_user, contents
+                ingest_file_to_redis, r_client, new_file, contents
             )
 
             storage_to_add += file_size

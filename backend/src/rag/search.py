@@ -1,48 +1,65 @@
-from functools import lru_cache
-
 import numpy as np
-from redis.commands.search.query import Query as RSQuery
+from async_lru import alru_cache
+from bson import ObjectId
 
 from src.client import get_redis_client
 from src.models import File, User
 
-from . import INDEX_NAME, TOP_K, model
+from . import INDEX_NAME, TOP_K, get_model
 
 
-@lru_cache(maxsize=128)
-async def perform_redis_search(query_text: str, user_id: str):
+@alru_cache(maxsize=128)
+async def perform_redis_search(query_text: str):
     r_client = get_redis_client()
+    model = get_model()
     q_emb = (
         model.encode(query_text, normalize_embeddings=True).astype(np.float32).tobytes()
     )
 
-    knn_query = f"(@user_id:{{{user_id}}})=>[KNN {TOP_K} @embedding $vec AS distance]"
+    query_string = f"*=>[KNN {TOP_K} @embedding $vec AS distance]"
 
-    q = RSQuery(knn_query).return_fields("distance").dialect(2)
-    results = await r_client.ft(INDEX_NAME).search(q, query_params={"vec": q_emb})
-
-    return [
-        {"id": doc.id.split(":")[1], "score": 1 / (1 + float(doc.distance))}
-        for doc in results.docs
+    command_args = [
+        "FT.SEARCH",
+        INDEX_NAME,
+        query_string,
+        "PARAMS",
+        "2",
+        "vec",
+        q_emb,
+        "DIALECT",
+        "2",
+        "RETURN",
+        "1",
+        "distance",
     ]
+
+    raw_results = await r_client.execute_command(*command_args)
+
+    results = []
+    i = 1
+    while i < len(raw_results):
+        doc_id = raw_results[i].decode("utf-8")
+        distance = float(raw_results[i + 1][1])
+
+        results.append({"hash": doc_id.split(":")[1], "score": 1 / (1 + distance)})
+        i += 2
+
+    return results
 
 
 async def perform_mongodb_search(query_text: str, user: User):
-    query_vector = model.encode(query_text).tolist()
+    model = get_model()
+    query_vector = [float(x) for x in model.encode(query_text)]
 
     pipeline = [
         {
             "$vectorSearch": {
-                "index": "vector_search_index",
+                "index": INDEX_NAME,
                 "path": "embedding",
                 "queryVector": query_vector,
                 "numCandidates": 100,
                 "limit": TOP_K,
-                "filter": {
-                    "compound": {
-                        "must": [{"equals": {"path": "owner.id", "value": user.id}}]
-                    }
-                },
+                "filter": {"owner.$id": ObjectId(user.id)},
             },
         },
         {

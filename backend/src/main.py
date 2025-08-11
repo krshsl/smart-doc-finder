@@ -8,7 +8,7 @@ from types import SimpleNamespace
 from fastapi import FastAPI
 
 from .api import routes
-from .client import init_db, init_redis, init_search_index
+from .client import init_db, init_redis, init_redis_index, init_search_index
 from .utils.constants import REQUIRED_APP_VARS
 
 tracemalloc.start()
@@ -36,6 +36,8 @@ async def lifespan(app: FastAPI):
     logger.info("Database initialized successfully.")
     await init_redis(app_vars)
     logger.info("Redis initialized successfully.")
+    await init_redis_index()
+    logger.info("Redis Search index initialized successfully.")
     await init_search_index(app_vars)
     logger.info("Atlas Search index initialized successfully.")
     yield

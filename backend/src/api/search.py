@@ -1,6 +1,7 @@
 import re
 from asyncio import gather
 
+from beanie.operators import In
 from bson import ObjectId
 from bson.dbref import DBRef
 from fastapi import APIRouter, BackgroundTasks, Depends, status
@@ -42,28 +43,75 @@ async def ai_search(
     q: str,
     background_tasks: BackgroundTasks,
     token=Depends(auth.verify_access_token),
-    r_client=Depends(get_redis_client),
 ):
     token_data, current_user = token
-    search_results = []
+    file_docs = []
+    score_map = {}
 
     try:
-        search_results = await perform_redis_search(q, str(current_user.id))
-    except RedisError:
-        search_results = await perform_mongodb_search(q, current_user)
-
+        search_results = await perform_redis_search(q)
         if search_results:
-            result_ids = [res["id"] for res in search_results]
-            background_tasks.add_task(sync_files_to_redis, r_client, result_ids)
+            score_map = {res["hash"]: res["score"] for res in search_results}
+            content_hashes = list(score_map.keys())
 
-    if not search_results:
+            file_docs = await File.find(
+                In(File.content_hash, content_hashes),
+                File.owner == DBRef(User.__name__, current_user.id),
+            ).to_list()
+
+    except RedisError as e:
+        from src import logger
+
+        logger.warning(f"Redis search failed, falling back to MongoDB: {e}")
+
+        search_results = await perform_mongodb_search(q, current_user)
+        if search_results:
+            score_map = {res["id"]: res["score"] for res in search_results}
+            result_ids = list(score_map.keys())
+
+            file_docs = await File.find(
+                In(File.id, [ObjectId(id) for id in result_ids]),
+                File.owner == DBRef(User.__name__, current_user.id),
+            ).to_list()
+
+            sync_ids = [str(doc.id) for doc in file_docs]
+            r_client = get_redis_client()
+            background_tasks.add_task(sync_files_to_redis, r_client, sync_ids)
+
+    if not file_docs:
         return {"files": [], "folders": []}
 
-    search_results_ids = [res["id"] for res in search_results]
+    files_as_dicts = await gather(
+        *(doc._to_dict(include_refs=True) for doc in file_docs)
+    )
 
-    file_docs = await File.find(
-        File.id.in_([ObjectId(id) for id in search_results_ids]),
-        File.owner.id == current_user.id,
-    ).to_list()
+    for file_dict in files_as_dicts:
+        doc_id_str = file_dict["id"]
+        original_doc = next(
+            (doc for doc in file_docs if str(doc.id) == doc_id_str), None
+        )
 
-    return {"files": await gather(*(f._to_dict() for f in file_docs)), "folders": []}
+        lookup_key = (
+            original_doc.content_hash
+            if original_doc and original_doc.content_hash in score_map
+            else doc_id_str
+        )
+        file_dict["score"] = score_map.get(lookup_key, 0)
+
+    scores = [f["score"] for f in files_as_dicts if f["score"] > 0]
+    if scores:
+        min_score = min(scores)
+        max_score = max(scores)
+        score_range = max_score - min_score
+
+        if score_range > 0:
+            for f in files_as_dicts:
+                f["score"] = (f["score"] - min_score) / score_range
+        else:
+            for f in files_as_dicts:
+                f["score"] = 1.0
+
+    return {
+        "files": files_as_dicts,
+        "folders": [],
+    }

@@ -1,10 +1,12 @@
+import hashlib
+
 import numpy as np
 from bson import ObjectId
 
 from src.client import get_fs
-from src.models import File, User
+from src.models import File
 
-from . import CHUNK_WORDS, DOC_PREFIX, SAMPLE_CHUNKS, model
+from . import CHUNK_WORDS, DOC_PREFIX, SAMPLE_CHUNKS, get_model
 
 
 def chunk_text(text, n=CHUNK_WORDS):
@@ -30,9 +32,19 @@ def extract_text_from_contents(contents: bytes, mime_type: str) -> str:
     return ""
 
 
-async def ingest_file_to_redis(r_client, file_doc: File, owner: User, contents: bytes):
+async def ingest_file_to_redis(r_client, file_doc: File, contents: bytes):
     full_text = extract_text_from_contents(contents, file_doc.file_type)
     if not full_text:
+        return
+
+    content_hash = hashlib.sha256(contents).hexdigest()
+
+    file_doc.content_hash = content_hash
+
+    redis_key = f"{DOC_PREFIX}{content_hash}"
+
+    if await r_client.exists(redis_key):
+        await file_doc.save()
         return
 
     chunks = list(chunk_text(full_text))
@@ -44,23 +56,20 @@ async def ingest_file_to_redis(r_client, file_doc: File, owner: User, contents: 
     else:
         sampled_chunks = chunks
 
-    chunk_embeddings = model.encode(sampled_chunks)
+    chunk_embeddings = get_model().encode(sampled_chunks)
     emb = np.mean(chunk_embeddings, axis=0).astype(np.float32)
 
     snippet_text = sampled_chunks[0][:200]
-    redis_key = f"{DOC_PREFIX}{str(file_doc.id)}"
     await r_client.hset(
         redis_key,
         mapping={
-            "filename": file_doc.file_name,
             "snippet": snippet_text,
             "embedding": emb.tobytes(),
-            "user_id": str(owner.id),
+            "filename": file_doc.file_name,
         },
     )
 
     file_doc.embedding = emb.tolist()
-    file_doc.file_size += emb.nbytes
     await file_doc.save()
 
 
@@ -79,8 +88,7 @@ async def sync_files_to_redis(r_client, file_ids: list[str]):
 
             grid_out = await fs.open_download_stream(ObjectId(file_doc.gridfs_id))
             contents = await grid_out.read()
-            owner = await file_doc.owner.fetch()
 
-            await ingest_file_to_redis(r_client, file_doc, owner, contents)
+            await ingest_file_to_redis(r_client, file_doc, contents)
         except Exception as e:
             logger.error(f"Failed to sync file {file_id} to Redis: {e}")
