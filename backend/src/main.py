@@ -6,6 +6,7 @@ from sys import exit
 from types import SimpleNamespace
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from .api import routes
 from .client import init_db, init_redis, init_redis_index, init_search_index
@@ -48,4 +49,18 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+origins = [
+    "http://localhost:5173",
+    "https://smart-doc-finder.vercel.app",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(routes)

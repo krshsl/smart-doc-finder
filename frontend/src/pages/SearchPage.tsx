@@ -1,6 +1,6 @@
 import {
   ArrowDownTrayIcon,
-  ArrowTopRightOnSquareIcon,
+  ArrowTopRightOnSquareIcon
 } from "@heroicons/react/24/outline";
 import { FolderIcon, DocumentIcon } from "@heroicons/react/24/solid";
 import React, { useEffect, useState } from "react";
@@ -34,7 +34,7 @@ const SearchPage: React.FC = () => {
 
   useEffect(() => {
     if (query) {
-      const fetchResults = async () => {
+      const fetchResults = async() => {
         setIsLoading(true);
         try {
           const data = await searchService.search(query, isAiSearch);
@@ -53,7 +53,7 @@ const SearchPage: React.FC = () => {
     }
   }, [query, location.key]);
 
-  const handleOpenFile = async (item: FileItem) => {
+  const handleOpenFile = async(item: FileItem) => {
     setIsActionLoading(true);
     try {
       const blob = await cloudService.getFileBlob(item.id);
@@ -61,7 +61,7 @@ const SearchPage: React.FC = () => {
       setFilePreview({
         url: fileURL,
         type: item.file_type,
-        name: item.file_name,
+        name: item.file_name
       });
     } catch (error) {
       console.error("Failed to fetch file for preview:", error);
@@ -82,9 +82,9 @@ const SearchPage: React.FC = () => {
     }
   };
 
-  const handleDownload = async (
+  const handleDownload = async(
     item: FileItem | FolderItem,
-    type: "file" | "folder",
+    type: "file" | "folder"
   ) => {
     setIsActionLoading(true);
     try {
@@ -120,8 +120,8 @@ const SearchPage: React.FC = () => {
         {isLoading
           ? "Searching..."
           : `Found ${
-              results.folders.length + results.files.length
-            } results for "${query}"`}
+            results.folders.length + results.files.length
+          } results for "${query}"`}
       </p>
 
       <div className="mt-8">
@@ -142,13 +142,13 @@ const SearchPage: React.FC = () => {
                           onClick: () => handleOpenFolder(folder),
                           icon: (
                             <ArrowTopRightOnSquareIcon className="h-5 w-5" />
-                          ),
+                          )
                         },
                         {
                           label: "Download",
                           onClick: () => handleDownload(folder, "folder"),
-                          icon: <ArrowDownTrayIcon className="h-5 w-5" />,
-                        },
+                          icon: <ArrowDownTrayIcon className="h-5 w-5" />
+                        }
                       ]}
                     >
                       <div
@@ -179,20 +179,20 @@ const SearchPage: React.FC = () => {
                           onClick: () => handleOpenFile(file),
                           icon: (
                             <ArrowTopRightOnSquareIcon className="h-5 w-5" />
-                          ),
+                          )
                         },
                         {
                           label: "Download",
                           onClick: () => handleDownload(file, "file"),
-                          icon: <ArrowDownTrayIcon className="h-5 w-5" />,
+                          icon: <ArrowDownTrayIcon className="h-5 w-5" />
                         },
                         {
                           label: "Go to Folder",
                           onClick: () => handleGoToFolder(file),
                           icon: (
                             <ArrowTopRightOnSquareIcon className="h-5 w-5" />
-                          ),
-                        },
+                          )
+                        }
                       ]}
                     >
                       <div
