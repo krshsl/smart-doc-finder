@@ -13,8 +13,13 @@ from .client import init_db, init_redis, init_redis_index, init_search_index
 from .utils.constants import REQUIRED_APP_VARS
 from .utils.populate_db import populate_db
 
-tracemalloc.start()
 logger = logging.getLogger("uvicorn")
+
+ENV = getenv("ENV", "prod").lower()
+debug_mode = ENV == "dev"
+if debug_mode:
+    tracemalloc.start()
+    logger.info("tracemalloc enabled for development mode.")
 
 
 def get_app_vars():
@@ -36,25 +41,26 @@ async def lifespan(app: FastAPI):
         app_vars.DB_NAME,
     )
     logger.info("Database initialized successfully.")
+
     await init_redis(app_vars)
     logger.info("Redis initialized successfully.")
+
     await init_redis_index()
     logger.info("Redis Search index initialized successfully.")
+
     await init_search_index(app_vars)
     logger.info("Atlas Search index initialized successfully.")
+
     await populate_db(app_vars)
     logger.info("Populated db successfully.")
+
     yield
     logger.info("Application shutting down.")
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan, debug=debug_mode)
 
-origins = [
-    "http://localhost:5173",
-    "https://smart-doc-finder.vercel.app",
-]
-
+origins = getenv("CORS_ORIGINS", "").split(",")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
