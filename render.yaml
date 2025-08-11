@@ -1,9 +1,0 @@
-services:
-  - type: web
-    name: smart-doc-finder-backend
-    env: python
-    buildCommand: |
-      cd backend
-      pip install -r requirements.txt
-      python scripts/download_model.py
-    startCommand: cd backend && gunicorn -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:$PORT --workers 2
