@@ -8,20 +8,20 @@ const config: Config = {
         sparkleMove: {
           "0%, 100%": {
             transform: "scale(1) rotate(0deg)",
-            opacity: "0.8",
+            opacity: "0.8"
           },
           "50%": {
             transform: "scale(1.25) rotate(15deg)",
-            opacity: "1",
-          },
-        },
+            opacity: "1"
+          }
+        }
       },
       animation: {
-        sparkle: "sparkleMove 1.5s infinite ease-in-out",
-      },
-    },
+        sparkle: "sparkleMove 1.5s infinite ease-in-out"
+      }
+    }
   },
-  plugins: [],
+  plugins: []
 };
 
 export default config;

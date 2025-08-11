@@ -41,6 +41,7 @@ export const setupInterceptors = () => {
         response.config.url &&
         !response.config.url.includes("/login") &&
         !response.config.url.includes("/logout") &&
+        !response.config.url.includes("/user") &&
         !response.config.url.includes("/storage")
       ) {
         eventBus.dispatch("apiSuccess");

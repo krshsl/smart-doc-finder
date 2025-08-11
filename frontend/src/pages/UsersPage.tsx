@@ -18,6 +18,8 @@ const UsersPage: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
@@ -44,17 +46,21 @@ const UsersPage: React.FC = () => {
 
   const handleDelete = async() => {
     if (!deleteModal.user) return;
+    setIsDeleting(true);
     try {
-      await userService.deleteUser(deleteModal.user.id);
+      await userService.deleteUser(deleteModal.user.id!);
       setDeleteModal({ isOpen: false, user: null });
       fetchUsers();
     } catch (error) {
       console.error("Failed to delete user:", error);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   const confirmBulkDelete = async() => {
     if (selectedUsers.length === 0) return;
+    setIsBulkDeleting(true);
     try {
       await userService.bulkDeleteUsers(selectedUsers);
       setSelectedUsers([]);
@@ -63,12 +69,13 @@ const UsersPage: React.FC = () => {
       console.error("Failed to bulk delete users:", error);
     } finally {
       setIsBulkDeleteModalOpen(false);
+      setIsBulkDeleting(false);
     }
   };
 
   return (
     <div>
-      <LoadingOverlay isLoading={isLoading} />
+      <LoadingOverlay isLoading={isLoading || isDeleting || isBulkDeleting} />
       <div className="sm:flex sm:items-center">
         <div className="sm:flex-auto">
           <h1 className="text-3xl font-bold text-gray-800">Users</h1>
@@ -91,14 +98,15 @@ const UsersPage: React.FC = () => {
           placeholder="Search users..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="block w-full rounded-md border-0 py-1.5 pl-4  text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300"
+          className="block w-full rounded-md border-0 py-1.5 pl-4text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300"
         />
       </div>
       {selectedUsers.length > 0 && (
         <div className="mt-4">
           <button
             onClick={() => setIsBulkDeleteModalOpen(true)}
-            className="rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500"
+            className="rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isDeleting || isBulkDeleting}
           >
             Delete Selected ({selectedUsers.length})
           </button>
@@ -121,29 +129,34 @@ const UsersPage: React.FC = () => {
                       }
                     />
                   </th>
+
                   <th
                     scope="col"
                     className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0"
                   >
                     Name
                   </th>
+
                   <th
                     scope="col"
                     className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
                   >
                     Email
                   </th>
+
                   <th
                     scope="col"
                     className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
                   >
                     Role
                   </th>
+
                   <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-0">
                     <span className="sr-only">Edit</span>
                   </th>
                 </tr>
               </thead>
+
               <tbody className="divide-y divide-gray-200 bg-white">
                 {users.map((user) => (
                   <tr key={user.id}>
@@ -161,15 +174,19 @@ const UsersPage: React.FC = () => {
                         }
                       />
                     </td>
+
                     <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0">
                       {user.username}
                     </td>
+
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       {user.email}
                     </td>
+
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 capitalize">
                       {user.role}
                     </td>
+
                     <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
                       <Link
                         to={`/users/edit/${user.id}`}
@@ -178,9 +195,11 @@ const UsersPage: React.FC = () => {
                       >
                         <PencilIcon className="h-5 w-5 inline" />
                       </Link>
+
                       <button
                         onClick={() => setDeleteModal({ isOpen: true, user })}
-                        className="ml-4 text-red-600 hover:text-red-900"
+                        className="ml-4 text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={isDeleting || isBulkDeleting}
                       >
                         <TrashIcon className="h-5 w-5 inline" />
                       </button>
@@ -192,6 +211,7 @@ const UsersPage: React.FC = () => {
           </div>
         </div>
       </div>
+
       <Pagination
         currentPage={page}
         totalPages={totalPages}
@@ -206,14 +226,15 @@ const UsersPage: React.FC = () => {
       >
         Are you sure you want to delete the user "{deleteModal.user?.username}"?
       </ConfirmationModal>
+
       <ConfirmationModal
         isOpen={isBulkDeleteModalOpen}
         onClose={() => setIsBulkDeleteModalOpen(false)}
         onConfirm={confirmBulkDelete}
         title="Delete Selected Users"
       >
-        Are you sure you want to delete the {selectedUsers.length} selected
-        users?
+        Are you sure you want to delete the {selectedUsers.length}
+        selected users?
       </ConfirmationModal>
     </div>
   );

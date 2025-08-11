@@ -13,6 +13,7 @@ configparser==7.2.0
 dnspython==2.7.0
 email_validator==2.2.0
 etelemetry==0.3.1
+Faker==37.5.3
 fastapi==0.116.1
 fastapi-cli==0.0.8
 fastapi-cloud-cli==0.1.5
@@ -64,6 +65,7 @@ PyYAML==6.0.2
 rdflib==7.1.4
 redis==6.4.0
 regex==2025.7.34
+reportlab==4.4.3
 requests==2.32.4
 rich==14.1.0
 rich-toolkit==0.14.9

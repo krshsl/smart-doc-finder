@@ -3,7 +3,7 @@ import { FileItem, FolderData, FolderItem } from "../types";
 import api from "./api";
 
 export const getStorageUsage = async(userId: string): Promise<any> => {
-  const response = await api.get(`/storage/${userId}`);
+  const response = await api.get(`/storage/${userId}`, { allowGuest: true });
   return response.data;
 };
 
@@ -11,12 +11,15 @@ export const getFolderContents = async(
   folderId: string | null
 ): Promise<FolderData> => {
   const endpoint = folderId ? `/folder/${folderId}` : "/folder";
-  const response = await api.get(endpoint);
+  const response = await api.get(endpoint, { allowGuest: true });
   return response.data;
 };
 
 export const getFileBlob = async(fileId: string): Promise<Blob> => {
-  const response = await api.get(`/file/${fileId}`, { responseType: "blob" });
+  const response = await api.get(`/file/${fileId}`, {
+    responseType: "blob",
+    allowGuest: true
+  });
   return response.data;
 };
 
@@ -77,7 +80,7 @@ export const downloadItems = async(
       file_ids: fileIds,
       folder_ids: folderIds
     },
-    { responseType: "blob" }
+    { responseType: "blob", allowGuest: true }
   );
   return response.data;
 };

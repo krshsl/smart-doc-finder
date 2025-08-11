@@ -10,6 +10,7 @@ from fastapi import FastAPI
 from .api import routes
 from .client import init_db, init_redis, init_redis_index, init_search_index
 from .utils.constants import REQUIRED_APP_VARS
+from .utils.populate_db import populate_db
 
 tracemalloc.start()
 logger = logging.getLogger("uvicorn")
@@ -40,6 +41,8 @@ async def lifespan(app: FastAPI):
     logger.info("Redis Search index initialized successfully.")
     await init_search_index(app_vars)
     logger.info("Atlas Search index initialized successfully.")
+    await populate_db(app_vars)
+    logger.info("Populated db successfully.")
     yield
     logger.info("Application shutting down.")
 

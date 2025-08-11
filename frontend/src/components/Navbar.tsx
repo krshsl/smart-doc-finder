@@ -8,7 +8,7 @@ const Navbar: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [query, setQuery] = useState<string>(searchParams.get("q") || "");
   const [aiSearch, setAiSearch] = useState<boolean>(
-    searchParams.get("ai") === "1",
+    searchParams.get("ai") === "1"
   );
 
   useEffect(() => {

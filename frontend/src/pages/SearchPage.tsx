@@ -9,8 +9,8 @@ import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { ContextMenu } from "../components/ContextMenu";
 import { FileViewerModal } from "../components/FileViewerModal";
 import { LoadingOverlay } from "../components/LoadingOverlay";
-import api from "../services/api";
 import * as cloudService from "../services/cloudService";
+import * as searchService from "../services/searchService";
 import { FileItem, FolderItem } from "../types";
 
 const SearchPage: React.FC = () => {
@@ -37,9 +37,8 @@ const SearchPage: React.FC = () => {
       const fetchResults = async () => {
         setIsLoading(true);
         try {
-          const endpoint = isAiSearch ? "/search/ai" : "/search";
-          const response = await api.get(`${endpoint}?q=${query}`);
-          setResults(response.data);
+          const data = await searchService.search(query, isAiSearch);
+          setResults(data);
         } catch (error) {
           console.error("Failed to fetch search results:", error);
           setResults({ files: [], folders: [] });
@@ -114,13 +113,15 @@ const SearchPage: React.FC = () => {
   };
 
   return (
-    <div>
+    <div className="p-4 sm:p-6">
       <LoadingOverlay isLoading={isActionLoading} />
       <h1 className="text-3xl font-bold text-gray-800">Search Results</h1>
       <p className="mt-2 text-gray-500">
         {isLoading
           ? "Searching..."
-          : `Found ${results.folders.length + results.files.length} results for "${query}"`}
+          : `Found ${
+              results.folders.length + results.files.length
+            } results for "${query}"`}
       </p>
 
       <div className="mt-8">
@@ -131,7 +132,7 @@ const SearchPage: React.FC = () => {
             {results.folders.length > 0 && (
               <div>
                 <h2 className="text-xl font-semibold text-gray-700">Folders</h2>
-                <div className="mt-4 grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                   {results.folders.map((folder) => (
                     <ContextMenu
                       key={folder.id}
@@ -152,10 +153,10 @@ const SearchPage: React.FC = () => {
                     >
                       <div
                         onDoubleClick={() => handleOpenFolder(folder)}
-                        className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-transparent bg-white p-4 text-center shadow-sm transition-all hover:border-blue-500 hover:shadow-md"
+                        className="flex h-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-transparent bg-white p-4 text-center shadow-sm transition-all hover:border-blue-500 hover:shadow-md"
                       >
                         <FolderIcon className="h-16 w-16 text-blue-500" />
-                        <span className="mt-2 block truncate text-sm font-medium text-gray-900">
+                        <span className="mt-2 block w-full truncate text-sm font-medium text-gray-900">
                           {folder.name}
                         </span>
                       </div>
@@ -168,7 +169,7 @@ const SearchPage: React.FC = () => {
             {results.files.length > 0 && (
               <div>
                 <h2 className="text-xl font-semibold text-gray-700">Files</h2>
-                <div className="mt-4 grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                   {results.files.map((file) => (
                     <ContextMenu
                       key={file.id}
@@ -196,7 +197,7 @@ const SearchPage: React.FC = () => {
                     >
                       <div
                         onDoubleClick={() => handleOpenFile(file)}
-                        className="relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-transparent bg-white p-4 text-center shadow-sm transition-all hover:border-blue-500 hover:shadow-md"
+                        className="relative flex h-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-transparent bg-white p-4 text-center shadow-sm transition-all hover:border-blue-500 hover:shadow-md"
                       >
                         {isAiSearch && typeof file.score === "number" && (
                           <div className="absolute top-0 right-0 rounded-bl-lg bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">
@@ -204,7 +205,7 @@ const SearchPage: React.FC = () => {
                           </div>
                         )}
                         <DocumentIcon className="h-16 w-16 text-gray-500" />
-                        <span className="mt-2 block truncate text-sm font-medium text-gray-900">
+                        <span className="mt-2 block w-full truncate text-sm font-medium text-gray-900">
                           {file.file_name}
                         </span>
                       </div>
