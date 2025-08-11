@@ -13,7 +13,7 @@ import { User } from "../types";
 const roles = [
   { value: "user", name: "User" },
   { value: "guest", name: "Guest" },
-  { value: "admin", name: "Admin" },
+  { value: "admin", name: "Admin" }
 ];
 
 const UserFormPage: React.FC = () => {
@@ -29,18 +29,18 @@ const UserFormPage: React.FC = () => {
   const formRef = useRef<HTMLFormElement>(null);
 
   const isEditingCurrentUser = location.pathname.includes(
-    "/settings/edit-profile",
+    "/settings/edit-profile"
   );
   const passedUserData = location.state?.user;
 
   const [currentUserData, setCurrentUserData] = useState<User | null>(
-    isEditingCurrentUser ? user : passedUserData || null,
+    isEditingCurrentUser ? user : passedUserData || null
   );
 
   const isPublicSignUp = !user;
   const isEditMode = !!userId || isEditingCurrentUser;
 
-  const fetchUserData = useCallback(async () => {
+  const fetchUserData = useCallback(async() => {
     if (isEditMode && !passedUserData && userId) {
       setIsLoading(true);
       try {
@@ -67,7 +67,7 @@ const UserFormPage: React.FC = () => {
     }
   }, [passedUserData, isEditMode, fetchUserData]);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async(e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
@@ -92,7 +92,7 @@ const UserFormPage: React.FC = () => {
     const payload: any = {
       username: data.username,
       email: data.email,
-      role: selectedRole.value,
+      role: selectedRole.value
     };
     if (data.password) payload.password = data.password;
 

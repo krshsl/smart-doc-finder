@@ -20,7 +20,7 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ crumbs }) => {
             </Link>
           </div>
         </li>
-        {crumbs.map((crumb, index) => (
+        {crumbs.map((crumb, _) => (
           <li key={crumb.id}>
             <div className="flex items-center">
               <ChevronRightIcon
