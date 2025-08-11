@@ -12,8 +12,8 @@ services:
 
   frontend:
     build:
-      context: .
-      dockerfile: frontend/Dockerfile
+      context: frontend
+      dockerfile: Dockerfile
     working_dir: /app
     volumes:
       - ./frontend:/app
@@ -24,14 +24,14 @@ services:
 
   backend:
     build:
-      context: .
-      dockerfile: backend/Dockerfile
+      context: backend
+      dockerfile: Dockerfile
     working_dir: /app
     volumes:
       - ./backend:/app
     env_file:
-      - backend/dev.env
-    command: uvicorn src.app:app --host 0.0.0.0 --port 8000 --reload
+      - ./backend/dev.env
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
 
 volumes:
   node_modules:

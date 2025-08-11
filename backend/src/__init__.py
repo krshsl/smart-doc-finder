@@ -1,1 +1,1 @@
-from .app import app, logger
+from .main import app, logger

@@ -1,10 +1,10 @@
 import {
   ArrowDownTrayIcon,
-  ArrowTopRightOnSquareIcon
+  ArrowTopRightOnSquareIcon,
 } from "@heroicons/react/24/outline";
 import { FolderIcon, DocumentIcon } from "@heroicons/react/24/solid";
 import React, { useEffect, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 
 import { ContextMenu } from "../components/ContextMenu";
 import { FileViewerModal } from "../components/FileViewerModal";
@@ -16,6 +16,7 @@ import { FileItem, FolderItem } from "../types";
 const SearchPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const query = searchParams.get("q");
 
   const [results, setResults] = useState<{
@@ -29,13 +30,15 @@ const SearchPage: React.FC = () => {
     type: string;
     name: string;
   } | null>(null);
+  const isAiSearch = location.pathname.includes("/search/ai");
 
   useEffect(() => {
     if (query) {
-      const fetchResults = async() => {
+      const fetchResults = async () => {
         setIsLoading(true);
         try {
-          const response = await api.get(`/search?q=${query}`);
+          const endpoint = isAiSearch ? "/search/ai" : "/search";
+          const response = await api.get(`${endpoint}?q=${query}`);
           setResults(response.data);
         } catch (error) {
           console.error("Failed to fetch search results:", error);
@@ -49,9 +52,9 @@ const SearchPage: React.FC = () => {
       setResults({ files: [], folders: [] });
       setIsLoading(false);
     }
-  }, [query]);
+  }, [query, location.key]);
 
-  const handleOpenFile = async(item: FileItem) => {
+  const handleOpenFile = async (item: FileItem) => {
     setIsActionLoading(true);
     try {
       const blob = await cloudService.getFileBlob(item.id);
@@ -59,7 +62,7 @@ const SearchPage: React.FC = () => {
       setFilePreview({
         url: fileURL,
         type: item.file_type,
-        name: item.file_name
+        name: item.file_name,
       });
     } catch (error) {
       console.error("Failed to fetch file for preview:", error);
@@ -80,9 +83,9 @@ const SearchPage: React.FC = () => {
     }
   };
 
-  const handleDownload = async(
+  const handleDownload = async (
     item: FileItem | FolderItem,
-    type: "file" | "folder"
+    type: "file" | "folder",
   ) => {
     setIsActionLoading(true);
     try {
@@ -138,13 +141,13 @@ const SearchPage: React.FC = () => {
                           onClick: () => handleOpenFolder(folder),
                           icon: (
                             <ArrowTopRightOnSquareIcon className="h-5 w-5" />
-                          )
+                          ),
                         },
                         {
                           label: "Download",
                           onClick: () => handleDownload(folder, "folder"),
-                          icon: <ArrowDownTrayIcon className="h-5 w-5" />
-                        }
+                          icon: <ArrowDownTrayIcon className="h-5 w-5" />,
+                        },
                       ]}
                     >
                       <div
@@ -175,26 +178,31 @@ const SearchPage: React.FC = () => {
                           onClick: () => handleOpenFile(file),
                           icon: (
                             <ArrowTopRightOnSquareIcon className="h-5 w-5" />
-                          )
+                          ),
                         },
                         {
                           label: "Download",
                           onClick: () => handleDownload(file, "file"),
-                          icon: <ArrowDownTrayIcon className="h-5 w-5" />
+                          icon: <ArrowDownTrayIcon className="h-5 w-5" />,
                         },
                         {
                           label: "Go to Folder",
                           onClick: () => handleGoToFolder(file),
                           icon: (
                             <ArrowTopRightOnSquareIcon className="h-5 w-5" />
-                          )
-                        }
+                          ),
+                        },
                       ]}
                     >
                       <div
                         onDoubleClick={() => handleOpenFile(file)}
-                        className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-transparent bg-white p-4 text-center shadow-sm transition-all hover:border-blue-500 hover:shadow-md"
+                        className="relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-transparent bg-white p-4 text-center shadow-sm transition-all hover:border-blue-500 hover:shadow-md"
                       >
+                        {isAiSearch && typeof file.score === "number" && (
+                          <div className="absolute top-0 right-0 rounded-bl-lg bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">
+                            {(file.score * 100).toFixed(0)}%
+                          </div>
+                        )}
                         <DocumentIcon className="h-16 w-16 text-gray-500" />
                         <span className="mt-2 block truncate text-sm font-medium text-gray-900">
                           {file.file_name}

@@ -1,3 +1,4 @@
+import hashlib
 import zipfile
 from io import BytesIO
 from typing import List
@@ -5,6 +6,7 @@ from typing import List
 from bson import ObjectId
 from fastapi import (
     APIRouter,
+    BackgroundTasks,
     Depends,
     Form,
     HTTPException,
@@ -17,8 +19,9 @@ from filetype import guess
 from pydantic import BaseModel, Field
 
 import src.utils.auth as auth
-from src.client import get_fs
+from src.client import get_fs, get_redis_client
 from src.models import File, Folder, User
+from src.rag.ingest import ingest_file_to_redis
 from src.utils.constants import (
     ALLOWED_MIME_TYPES,
     DEFAULT_FOLDER,
@@ -41,12 +44,14 @@ class BulkActionRequest(BaseModel):
 
 @router.post("/bulk/upload", status_code=status.HTTP_207_MULTI_STATUS)
 async def bulk_upload(
+    background_tasks: BackgroundTasks,
     files: List[UploadFile] = FastAPIFile(...),
     file_paths: List[str] = Form(...),
     parent_folder_id: str | None = Form(None),
     tags: List[str] = Form([]),
     token=Depends(auth.verify_access_token_exclude_guests),
     fs=Depends(get_fs),
+    r_client=Depends(get_redis_client),
 ):
     token_data, current_user = token
 
@@ -92,6 +97,7 @@ async def bulk_upload(
         file_path = file_paths[i]
         file_name = file.filename
         contents = file_contents_map[i]
+        content_hash = hashlib.sha256(contents).hexdigest()
         gridfs_id = None
 
         try:
@@ -145,8 +151,13 @@ async def bulk_upload(
                 folder=current_parent_folder,
                 tags=tags,
                 gridfs_id=str(gridfs_id),
+                content_hash=content_hash,
             )
             await new_file.insert()
+            background_tasks.add_task(
+                ingest_file_to_redis, r_client, new_file, contents
+            )
+
             storage_to_add += file_size
             successful_uploads.append({"file_name": file_name, "id": str(new_file.id)})
         except Exception as e:
