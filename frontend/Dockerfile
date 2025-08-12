@@ -17,6 +17,7 @@ ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
 RUN if [ "$VITE_NODE_ENV" = "production" ]; then npm run build; fi
 
+
 FROM node:23.5-alpine
 
 WORKDIR /app

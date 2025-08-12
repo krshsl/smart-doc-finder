@@ -1,4 +1,9 @@
 import { CheckIcon, ChevronUpDownIcon } from "@heroicons/react/20/solid";
+import {
+  UserIcon,
+  EnvelopeIcon,
+  LockClosedIcon,
+} from "@heroicons/react/24/outline";
 import * as LabelPrimitive from "@radix-ui/react-label";
 import * as Select from "@radix-ui/react-select";
 import React, { useEffect, useRef, useState, useCallback } from "react";
@@ -13,7 +18,7 @@ import { User } from "../types";
 const roles = [
   { value: "user", name: "User" },
   { value: "guest", name: "Guest" },
-  { value: "admin", name: "Admin" }
+  { value: "admin", name: "Admin" },
 ];
 
 const UserFormPage: React.FC = () => {
@@ -29,18 +34,18 @@ const UserFormPage: React.FC = () => {
   const formRef = useRef<HTMLFormElement>(null);
 
   const isEditingCurrentUser = location.pathname.includes(
-    "/settings/edit-profile"
+    "/settings/edit-profile",
   );
   const passedUserData = location.state?.user;
 
   const [currentUserData, setCurrentUserData] = useState<User | null>(
-    isEditingCurrentUser ? user : passedUserData || null
+    isEditingCurrentUser ? user : passedUserData || null,
   );
 
   const isPublicSignUp = !user;
   const isEditMode = !!userId || isEditingCurrentUser;
 
-  const fetchUserData = useCallback(async() => {
+  const fetchUserData = useCallback(async () => {
     if (isEditMode && !passedUserData && userId) {
       setIsLoading(true);
       try {
@@ -67,7 +72,7 @@ const UserFormPage: React.FC = () => {
     }
   }, [passedUserData, isEditMode, fetchUserData]);
 
-  const handleSubmit = async(e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
@@ -92,11 +97,12 @@ const UserFormPage: React.FC = () => {
     const payload: any = {
       username: data.username,
       email: data.email,
-      role: selectedRole.value
+      role: selectedRole.value,
     };
     if (data.password) payload.password = data.password;
 
     const targetUserId = isEditingCurrentUser ? user?.id : userId;
+    let isSuccess = true;
 
     try {
       const response = await userService.saveUser(payload, targetUserId);
@@ -104,9 +110,9 @@ const UserFormPage: React.FC = () => {
         updateToken(response.data.access_token);
       }
       setModalMessage(`User ${data.email} has been saved successfully!`);
-      setIsModalOpen(true);
       if (!isEditMode) formRef.current?.reset();
     } catch (err: any) {
+      isSuccess = false;
       const errorDetail = err.response?.data?.detail;
       if (typeof errorDetail === "string") {
         setError(errorDetail);
@@ -114,6 +120,7 @@ const UserFormPage: React.FC = () => {
         setError("An unexpected error occurred. Please try again.");
       }
     } finally {
+      if (isSuccess) setIsModalOpen(true);
       setIsLoading(false);
     }
   };
@@ -126,13 +133,13 @@ const UserFormPage: React.FC = () => {
   };
 
   const pageTitle = isEditMode
-    ? "Edit User"
+    ? "Edit Profile"
     : isPublicSignUp
       ? "Create an Account"
       : "Create New User";
   const pageSubtitle = isPublicSignUp
-    ? "Join us today!"
-    : "Manage user details.";
+    ? "Join us today to start storing your files securely."
+    : "Manage user details and permissions.";
 
   return (
     <>
@@ -141,66 +148,79 @@ const UserFormPage: React.FC = () => {
       </Modal>
       <LoadingOverlay isLoading={isLoading} />
       <div
-        className={`flex w-full items-center justify-center p-8 ${isPublicSignUp ? "min-h-screen bg-gray-100" : ""}`}
+        className={`flex w-full items-center justify-center p-8 ${
+          isPublicSignUp ? "min-h-screen bg-[hsl(var(--background))]" : ""
+        }`}
       >
         <div className="w-full max-w-md">
-          <h1 className="mb-2 text-4xl font-bold text-gray-800">{pageTitle}</h1>
-          <p className="mb-8 text-gray-500">{pageSubtitle}</p>
-          <form ref={formRef} onSubmit={handleSubmit}>
-            <div className="mb-4">
+          <h1 className="text-4xl font-bold text-[hsl(var(--foreground))]">
+            {pageTitle}
+          </h1>
+          <p className="mt-3 mb-8 text-[hsl(var(--muted-foreground))]">
+            {pageSubtitle}
+          </p>
+          <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
+            <div className="relative">
               <label
-                className="mb-2 block font-medium text-gray-700"
+                className="block text-sm font-medium text-[hsl(var(--foreground))] mb-2"
                 htmlFor="username"
               >
                 Username
               </label>
+              <UserIcon className="pointer-events-none absolute top-10 left-3 h-5 w-5 text-[hsl(var(--muted-foreground))]" />
               <input
                 type="text"
                 id="username"
                 name="username"
                 defaultValue={currentUserData?.username}
                 key={currentUserData?.id}
+                placeholder="e.g. john.doe"
                 required
-                className="w-full rounded-lg border border-gray-300 p-3"
+                className="block w-full rounded-lg border border-[hsl(var(--input))] bg-transparent py-2.5 pl-10 pr-4 shadow-sm focus:border-[hsl(var(--primary))] focus:ring-[hsl(var(--primary))] placeholder:text-[hsl(var(--muted-foreground))]/50"
               />
             </div>
-            <div className="mb-4">
+            <div className="relative">
               <label
-                className="mb-2 block font-medium text-gray-700"
+                className="block text-sm font-medium text-[hsl(var(--foreground))] mb-2"
                 htmlFor="new-email"
               >
                 Email
               </label>
+              <EnvelopeIcon className="pointer-events-none absolute top-10 left-3 h-5 w-5 text-[hsl(var(--muted-foreground))]" />
               <input
                 type="email"
                 id="new-email"
                 name="email"
                 defaultValue={currentUserData?.email}
                 key={currentUserData?.id}
+                placeholder="e.g. john.doe@example.com"
                 required
-                className="w-full rounded-lg border border-gray-300 p-3"
+                className="block w-full rounded-lg border border-[hsl(var(--input))] bg-transparent py-2.5 pl-10 pr-4 shadow-sm focus:border-[hsl(var(--primary))] focus:ring-[hsl(var(--primary))] placeholder:text-[hsl(var(--muted-foreground))]/50"
               />
             </div>
-            <div className="mb-6">
+            <div className="relative">
               <label
-                className="mb-2 block font-medium text-gray-700"
+                className="block text-sm font-medium text-[hsl(var(--foreground))] mb-2"
                 htmlFor="new-password"
               >
                 Password
               </label>
+              <LockClosedIcon className="pointer-events-none absolute top-10 left-3 h-5 w-5 text-[hsl(var(--muted-foreground))]" />
               <input
                 type="password"
                 id="new-password"
                 name="password"
-                placeholder={isEditMode ? "Leave blank to keep current" : ""}
+                placeholder={
+                  isEditMode ? "Leave blank to keep current" : "••••••••"
+                }
                 required={!isEditMode}
-                className="w-full rounded-lg border border-gray-300 p-3"
+                className="block w-full rounded-lg border border-[hsl(var(--input))] bg-transparent py-2.5 pl-10 pr-4 shadow-sm focus:border-[hsl(var(--primary))] focus:ring-[hsl(var(--primary))] placeholder:text-[hsl(var(--muted-foreground))]/50"
               />
             </div>
 
             {user?.role === "admin" && !isEditMode && (
-              <div className="mb-6">
-                <LabelPrimitive.Root className="mb-2 block font-medium text-gray-700">
+              <div className="pt-2">
+                <LabelPrimitive.Root className="block text-sm font-medium text-[hsl(var(--foreground))] mb-2">
                   Role
                 </LabelPrimitive.Root>
                 <Select.Root
@@ -209,24 +229,24 @@ const UserFormPage: React.FC = () => {
                     setSelectedRole(roles.find((r) => r.value === v)!)
                   }
                 >
-                  <Select.Trigger className="relative mt-1 w-full cursor-default rounded-lg border border-gray-300 bg-white py-3 pl-3 pr-10 text-left focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <Select.Trigger className="relative w-full cursor-default rounded-lg border border-[hsl(var(--input))] bg-[hsl(var(--card))] py-2.5 pl-3 pr-10 text-left shadow-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:border-[hsl(var(--primary))]">
                     <Select.Value />
                     <Select.Icon className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-                      <ChevronUpDownIcon className="h-5 w-5 text-gray-400" />
+                      <ChevronUpDownIcon className="h-5 w-5 text-[hsl(var(--muted-foreground))]" />
                     </Select.Icon>
                   </Select.Trigger>
                   <Select.Portal>
                     <Select.Content
                       position="popper"
                       sideOffset={5}
-                      className="z-10 mt-1 w-[var(--radix-select-trigger-width)] rounded-md bg-white shadow-lg"
+                      className="z-10 mt-1 w-[var(--radix-select-trigger-width)] rounded-md bg-[hsl(var(--popover))] shadow-lg ring-1 ring-black ring-opacity-5"
                     >
                       <Select.Viewport className="p-1">
                         {roles.map((role) => (
                           <Select.Item
                             key={role.value}
                             value={role.value}
-                            className="relative cursor-default select-none rounded-sm py-2 pl-10 pr-4 outline-none data-[highlighted]:bg-blue-100"
+                            className="relative cursor-default select-none rounded-md py-2 pl-10 pr-4 text-sm outline-none data-[highlighted]:bg-[hsl(var(--accent))] data-[highlighted]:text-[hsl(var(--accent-foreground))]"
                           >
                             <Select.ItemText>{role.name}</Select.ItemText>
                             <Select.ItemIndicator className="absolute left-0 flex w-10 items-center justify-center">
@@ -241,11 +261,13 @@ const UserFormPage: React.FC = () => {
               </div>
             )}
 
-            {error && <p className="mb-4 text-center text-red-500">{error}</p>}
+            {error && (
+              <p className="text-center text-sm text-red-600">{error}</p>
+            )}
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full rounded-lg bg-green-600 py-3 font-semibold text-white transition hover:bg-opacity-90 disabled:cursor-not-allowed disabled:bg-opacity-50"
+              className="w-full flex justify-center rounded-lg bg-[hsl(var(--primary))] py-3 px-4 font-semibold text-[hsl(var(--primary-foreground))] shadow-sm transition hover:bg-[hsl(var(--primary))]/90 disabled:cursor-not-allowed disabled:bg-[hsl(var(--primary))]/50"
             >
               {isLoading
                 ? "Saving..."
@@ -255,11 +277,11 @@ const UserFormPage: React.FC = () => {
             </button>
           </form>
           {isPublicSignUp && (
-            <p className="mt-6 text-center text-sm text-gray-600">
+            <p className="mt-8 text-center text-sm text-[hsl(var(--muted-foreground))]">
               Already have an account?{" "}
               <Link
                 to="/login"
-                className="font-medium text-blue-600 hover:underline"
+                className="font-medium text-[hsl(var(--primary))] hover:text-[hsl(var(--primary))]/80 hover:underline"
               >
                 Sign in
               </Link>

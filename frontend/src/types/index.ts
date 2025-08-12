@@ -2,7 +2,7 @@ export type UserRole = "user" | "admin" | "guest";
 
 export interface User {
   id?: string;
-  name: string;
+  username: string;
   email: string;
   role?: UserRole;
 }

@@ -1,8 +1,4 @@
-import {
-  CloudArrowUpIcon,
-  DocumentIcon,
-  FolderIcon
-} from "@heroicons/react/24/outline";
+import { CloudArrowUpIcon } from "@heroicons/react/24/outline";
 import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
 import React, { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
@@ -21,7 +17,7 @@ const UploadFilesPage: React.FC = () => {
     message: string;
   } | null>(null);
 
-  const handleUpload = async(files: File[], paths: string[]) => {
+  const handleUpload = async (files: File[], paths: string[]) => {
     if (files.length === 0) return;
     setIsLoading(true);
     setModalState(null);
@@ -35,24 +31,25 @@ const UploadFilesPage: React.FC = () => {
 
       if (successful_uploads?.length > 0) {
         messageLines.push(
-          `${successful_uploads.length} file(s) uploaded successfully.`
+          `${successful_uploads.length} item(s) uploaded successfully.`,
         );
       }
 
       if (failed_uploads?.length > 0) {
-        modalType = "error";
+        modalType =
+          failed_uploads.length === files.length ? "error" : "success";
         const failedNames = failed_uploads
           .map((f: any) => f.file_name)
           .join(", ");
         messageLines.push(
-          `\n${failed_uploads.length} file(s) failed to upload: ${failedNames}.`
+          `\n${failed_uploads.length} item(s) failed to upload: ${failedNames}.`,
         );
       }
 
       setModalState({
         isOpen: true,
         type: modalType,
-        message: messageLines.join(" ") || "No files were processed."
+        message: messageLines.join(" ") || "No files were processed.",
       });
     } catch (error: any) {
       const message =
@@ -64,13 +61,13 @@ const UploadFilesPage: React.FC = () => {
   };
 
   const onDrop = useCallback(
-    async(acceptedFiles: File[], fileRejections: any[], event: any) => {
+    async (acceptedFiles: File[], fileRejections: any[], event: any) => {
       let allFiles: File[] = [];
       let allPaths: string[] = [];
 
       if (event.dataTransfer && event.dataTransfer.items) {
         const items = Array.from(
-          event.dataTransfer.items as DataTransferItemList
+          event.dataTransfer.items as DataTransferItemList,
         );
         for (const item of items) {
           const entry = item.webkitGetAsEntry();
@@ -85,7 +82,7 @@ const UploadFilesPage: React.FC = () => {
       if (allFiles.length === 0 && acceptedFiles.length > 0) {
         allFiles = acceptedFiles;
         allPaths = acceptedFiles.map(
-          (file) => (file as any).webkitRelativePath || file.name
+          (file) => (file as any).webkitRelativePath || file.name,
         );
       }
 
@@ -93,11 +90,11 @@ const UploadFilesPage: React.FC = () => {
         handleUpload(allFiles, allPaths);
       }
     },
-    []
+    [],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop
+    onDrop,
   });
 
   return (
@@ -114,47 +111,63 @@ const UploadFilesPage: React.FC = () => {
         <p className="whitespace-pre-wrap">{modalState?.message}</p>
       </Modal>
 
-      <div className="p-4 sm:p-6">
-        <h1 className="text-3xl font-bold text-gray-800">Upload Items</h1>
+      <div className="p-6 lg:p-8">
+        <h1 className="text-4xl font-bold text-[hsl(var(--foreground))]">
+          Upload to Cloud
+        </h1>
+        <p className="mt-2 text-base text-[hsl(var(--muted-foreground))]">
+          Add new files and folders to your cloud storage.
+        </p>
 
-        <RadioGroupPrimitive.Root
-          value={uploadType}
-          onValueChange={(v) => setUploadType(v as any)}
-          className="mt-6 flex max-w-md space-x-4"
-        >
-          <RadioGroupPrimitive.Item
-            value="file"
-            className="flex-1 cursor-pointer items-center justify-center rounded-lg px-5 py-4 text-center shadow-md data-[state=checked]:bg-blue-600 data-[state=checked]:text-white data-[state=unchecked]:bg-white data-[state=unchecked]:text-gray-900"
+        <div className="mt-8 max-w-4xl mx-auto">
+          <div
+            {...getRootProps()}
+            className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-[hsl(var(--card))] p-12 text-center transition-all duration-300 ease-in-out cursor-pointer
+              ${
+                isDragActive
+                  ? "border-[hsl(var(--primary))] bg-[hsl(var(--primary))]/10 scale-105 shadow-2xl shadow-[hsl(var(--primary))]/20"
+                  : "border-[hsl(var(--input))] hover:border-[hsl(var(--primary))]/50 hover:bg-[hsl(var(--accent))]"
+              }`}
           >
-            <DocumentIcon className="mr-3 inline h-6 w-6" /> Upload Files
-          </RadioGroupPrimitive.Item>
-          <RadioGroupPrimitive.Item
-            value="folder"
-            className="flex-1 cursor-pointer items-center justify-center rounded-lg px-5 py-4 text-center shadow-md data-[state=checked]:bg-blue-600 data-[state=checked]:text-white data-[state=unchecked]:bg-white data-[state=unchecked]:text-gray-900"
-          >
-            <FolderIcon className="mr-3 inline h-6 w-6" /> Upload Folder
-          </RadioGroupPrimitive.Item>
-        </RadioGroupPrimitive.Root>
+            <input
+              {...getInputProps(
+                uploadType === "folder"
+                  ? { directory: "true", webkitdirectory: "true" }
+                  : { multiple: true },
+              )}
+            />
+            <div className="absolute top-6 right-6">
+              <RadioGroupPrimitive.Root
+                value={uploadType}
+                onValueChange={(v) => setUploadType(v as any)}
+                className="flex rounded-full bg-[hsl(var(--secondary))] p-1 border border-[hsl(var(--border))]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <RadioGroupPrimitive.Item
+                  value="file"
+                  className="group rounded-full px-4 py-1.5 text-sm font-medium cursor-pointer transition-colors data-[state=checked]:bg-[hsl(var(--primary))] data-[state=checked]:text-[hsl(var(--primary-foreground))] data-[state=unchecked]:text-[hsl(var(--muted-foreground))] data-[state=unchecked]:hover:bg-[hsl(var(--card))]"
+                >
+                  Files
+                </RadioGroupPrimitive.Item>
+                <RadioGroupPrimitive.Item
+                  value="folder"
+                  className="group rounded-full px-4 py-1.5 text-sm font-medium cursor-pointer transition-colors data-[state=checked]:bg-[hsl(var(--primary))] data-[state=checked]:text-[hsl(var(--primary-foreground))] data-[state=unchecked]:text-[hsl(var(--muted-foreground))] data-[state=unchecked]:hover:bg-[hsl(var(--card))]"
+                >
+                  Folder
+                </RadioGroupPrimitive.Item>
+              </RadioGroupPrimitive.Root>
+            </div>
 
-        <div
-          {...getRootProps()}
-          className={`mt-4 flex h-64 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-4 border-dashed bg-white transition-colors ${
-            isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300"
-          }`}
-        >
-          <input
-            {...getInputProps(
-              uploadType === "folder"
-                ? { directory: "true", webkitdirectory: "true" }
-                : { multiple: true }
-            )}
-          />
-          <CloudArrowUpIcon className="h-16 w-16 text-blue-500" />
-          <p className="mt-4 text-center text-lg font-semibold text-gray-700">
-            {isDragActive
-              ? "Drop items here..."
-              : `Drag & drop or click to select ${uploadType === "folder" ? "a folder" : "files"}`}
-          </p>
+            <CloudArrowUpIcon className="h-20 w-20 text-[hsl(var(--primary))] transition-transform duration-300 group-hover:scale-110" />
+            <h3 className="mt-4 text-2xl font-bold text-[hsl(var(--foreground))]">
+              {isDragActive
+                ? "Drop to upload"
+                : `Select a ${uploadType} to upload`}
+            </h3>
+            <p className="mt-2 text-[hsl(var(--muted-foreground))]">
+              or drag and drop it here
+            </p>
+          </div>
         </div>
       </div>
     </>

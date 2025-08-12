@@ -1,7 +1,8 @@
 import {
   PencilIcon,
   TrashIcon,
-  UserPlusIcon
+  UserPlusIcon,
+  MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
@@ -27,7 +28,7 @@ const UsersPage: React.FC = () => {
   }>({ isOpen: false, user: null });
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
 
-  const fetchUsers = useCallback(async() => {
+  const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     try {
       const data = await userService.getUsers(page, search);
@@ -44,7 +45,7 @@ const UsersPage: React.FC = () => {
     fetchUsers();
   }, [fetchUsers]);
 
-  const handleDelete = async() => {
+  const handleDelete = async () => {
     if (!deleteModal.user) return;
     setIsDeleting(true);
     try {
@@ -58,7 +59,7 @@ const UsersPage: React.FC = () => {
     }
   };
 
-  const confirmBulkDelete = async() => {
+  const confirmBulkDelete = async () => {
     if (selectedUsers.length === 0) return;
     setIsBulkDeleting(true);
     try {
@@ -74,141 +75,147 @@ const UsersPage: React.FC = () => {
   };
 
   return (
-    <div>
+    <div className="p-6 lg:p-8">
       <LoadingOverlay isLoading={isLoading || isDeleting || isBulkDeleting} />
-      <div className="sm:flex sm:items-center">
-        <div className="sm:flex-auto">
-          <h1 className="text-3xl font-bold text-gray-800">Users</h1>
-          <p className="mt-2 text-sm text-gray-700">
-            A list of all the users in the system.
+      <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-[hsl(var(--foreground))]">
+            User Management
+          </h1>
+          <p className="mt-2 text-[hsl(var(--muted-foreground))]">
+            Manage your team members and their account permissions.
           </p>
         </div>
-        <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+        <div className="flex items-center gap-2">
+          <div className="relative w-full max-w-xs">
+            <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[hsl(var(--muted-foreground))]" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search users..."
+              className="block w-full rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--card))] py-2 pl-10 pr-3 shadow-sm placeholder:text-[hsl(var(--muted-foreground))]/50"
+            />
+          </div>
           <Link
             to="/settings/create-user"
-            className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
+            className="inline-flex items-center gap-2 whitespace-nowrap rounded-md bg-[hsl(var(--primary))] px-3 py-2 text-sm font-semibold text-[hsl(var(--primary-foreground))] shadow-sm hover:bg-[hsl(var(--primary))]/80 transition"
           >
-            <UserPlusIcon className="-ml-1 mr-2 h-5 w-5" /> Add user
+            <UserPlusIcon className="h-5 w-5" /> Add user
           </Link>
         </div>
-      </div>
-      <div className="mt-4">
-        <input
-          type="text"
-          placeholder="Search users..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="block w-full rounded-md border-0 py-1.5 pl-4text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300"
-        />
-      </div>
+      </header>
+
       {selectedUsers.length > 0 && (
         <div className="mt-4">
           <button
             onClick={() => setIsBulkDeleteModalOpen(true)}
-            className="rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-md bg-[hsl(var(--destructive))] px-3 py-2 text-sm font-semibold text-[hsl(var(--destructive-foreground))] shadow-sm hover:bg-[hsl(var(--destructive))]/90 disabled:opacity-50"
             disabled={isDeleting || isBulkDeleting}
           >
             Delete Selected ({selectedUsers.length})
           </button>
         </div>
       )}
+
       <div className="mt-8 flow-root">
-        <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-          <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-            <table className="min-w-full divide-y divide-gray-300">
-              <thead>
-                <tr>
-                  <th scope="col" className="relative px-7 sm:w-12 sm:px-6">
+        <div className="overflow-x-auto rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))]">
+          <table className="min-w-full divide-y divide-[hsl(var(--border))]">
+            <thead className="bg-[hsl(var(--muted))]/50">
+              <tr>
+                <th
+                  scope="col"
+                  className="relative px-7 sm:w-12 sm:px-6 py-3.5"
+                >
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-[hsl(var(--input))] bg-[hsl(var(--card))] text-[hsl(var(--primary))]"
+                    onChange={(e) =>
+                      setSelectedUsers(
+                        e.target.checked ? users.map((u) => u.id) : [],
+                      )
+                    }
+                  />
+                </th>
+                <th
+                  scope="col"
+                  className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-[hsl(var(--foreground))] sm:pl-6"
+                >
+                  Name
+                </th>
+                <th
+                  scope="col"
+                  className="px-3 py-3.5 text-left text-sm font-semibold text-[hsl(var(--foreground))]"
+                >
+                  Role
+                </th>
+                <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                  <span className="sr-only">Actions</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[hsl(var(--border))]">
+              {users.map((user) => (
+                <tr
+                  key={user.id}
+                  className="hover:bg-[hsl(var(--accent))] transition-colors"
+                >
+                  <td className="relative px-7 sm:w-12 sm:px-6">
                     <input
                       type="checkbox"
-                      className="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300"
+                      className="h-4 w-4 rounded border-[hsl(var(--input))] bg-[hsl(var(--card))] text-[hsl(var(--primary))]"
+                      checked={selectedUsers.includes(user.id)}
                       onChange={(e) =>
                         setSelectedUsers(
-                          e.target.checked ? users.map((u) => u.id) : []
+                          e.target.checked
+                            ? [...selectedUsers, user.id]
+                            : selectedUsers.filter((id) => id !== user.id),
                         )
                       }
                     />
-                  </th>
-
-                  <th
-                    scope="col"
-                    className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0"
-                  >
-                    Name
-                  </th>
-
-                  <th
-                    scope="col"
-                    className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
-                  >
-                    Email
-                  </th>
-
-                  <th
-                    scope="col"
-                    className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
-                  >
-                    Role
-                  </th>
-
-                  <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-0">
-                    <span className="sr-only">Edit</span>
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-gray-200 bg-white">
-                {users.map((user) => (
-                  <tr key={user.id}>
-                    <td className="relative px-7 sm:w-12 sm:px-6">
-                      <input
-                        type="checkbox"
-                        className="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300"
-                        checked={selectedUsers.includes(user.id)}
-                        onChange={(e) =>
-                          setSelectedUsers(
-                            e.target.checked
-                              ? [...selectedUsers, user.id]
-                              : selectedUsers.filter((id) => id !== user.id)
-                          )
-                        }
+                  </td>
+                  <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
+                    <div className="flex items-center gap-3">
+                      <img
+                        className="h-8 w-8 rounded-full"
+                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=random`}
+                        alt=""
                       />
-                    </td>
-
-                    <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0">
-                      {user.username}
-                    </td>
-
-                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      {user.email}
-                    </td>
-
-                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 capitalize">
+                      <div>
+                        <div className="font-medium text-[hsl(var(--foreground))]">
+                          {user.username}
+                        </div>
+                        <div className="text-[hsl(var(--muted-foreground))]">
+                          {user.email}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-4 text-sm">
+                    <span className="inline-flex items-center rounded-md bg-[hsl(var(--secondary))] px-2 py-1 text-xs font-medium text-[hsl(var(--secondary-foreground))] capitalize">
                       {user.role}
-                    </td>
-
-                    <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
-                      <Link
-                        to={`/users/edit/${user.id}`}
-                        state={{ user }}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        <PencilIcon className="h-5 w-5 inline" />
-                      </Link>
-
-                      <button
-                        onClick={() => setDeleteModal({ isOpen: true, user })}
-                        className="ml-4 text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={isDeleting || isBulkDeleting}
-                      >
-                        <TrashIcon className="h-5 w-5 inline" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </span>
+                  </td>
+                  <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 space-x-4">
+                    <Link
+                      to={`/users/edit/${user.id}`}
+                      state={{ user }}
+                      className="text-[hsl(var(--primary))] hover:text-[hsl(var(--primary))]/80"
+                    >
+                      <PencilIcon className="h-5 w-5 inline" />
+                    </Link>
+                    <button
+                      onClick={() => setDeleteModal({ isOpen: true, user })}
+                      className="text-[hsl(var(--destructive))] hover:text-[hsl(var(--destructive))]/80 disabled:opacity-50"
+                      disabled={isDeleting || isBulkDeleting}
+                    >
+                      <TrashIcon className="h-5 w-5 inline" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -217,7 +224,6 @@ const UsersPage: React.FC = () => {
         totalPages={totalPages}
         onPageChange={setPage}
       />
-
       <ConfirmationModal
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, user: null })}
@@ -226,15 +232,14 @@ const UsersPage: React.FC = () => {
       >
         Are you sure you want to delete the user "{deleteModal.user?.username}"?
       </ConfirmationModal>
-
       <ConfirmationModal
         isOpen={isBulkDeleteModalOpen}
         onClose={() => setIsBulkDeleteModalOpen(false)}
         onConfirm={confirmBulkDelete}
         title="Delete Selected Users"
       >
-        Are you sure you want to delete the {selectedUsers.length}
-        selected users?
+        Are you sure you want to delete the {selectedUsers.length} selected
+        users?
       </ConfirmationModal>
     </div>
   );

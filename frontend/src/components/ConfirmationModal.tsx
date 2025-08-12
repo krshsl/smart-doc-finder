@@ -15,32 +15,42 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   onClose,
   onConfirm,
   title,
-  children
+  children,
 }) => {
   return (
     <Dialog.Root open={isOpen} onOpenChange={onClose}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-25 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 transform rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95">
-          <Dialog.Title className="text-lg font-medium leading-6 text-gray-900 flex items-center">
-            <ExclamationTriangleIcon className="h-6 w-6 text-red-500 mr-2" />
-            {title}
-          </Dialog.Title>
-          <Dialog.Description className="mt-2 text-sm text-gray-500">
-            {children}
-          </Dialog.Description>
-          <div className="mt-4 space-x-2">
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/60" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-6 shadow-lg">
+          <div className="sm:flex sm:items-start">
+            <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[hsl(var(--destructive))]/20 sm:mx-0 sm:h-10 sm:w-10">
+              <ExclamationTriangleIcon className="h-6 w-6 text-[hsl(var(--destructive))]" />
+            </div>
+            <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
+              <Dialog.Title asChild>
+                <h3 className="text-lg font-semibold leading-6 text-[hsl(var(--card-foreground))]">
+                  {title}
+                </h3>
+              </Dialog.Title>
+              <div className="mt-2">
+                <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                  {children}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse gap-3">
             <button
               type="button"
               onClick={onConfirm}
-              className="inline-flex justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+              className="inline-flex w-full justify-center rounded-md bg-[hsl(var(--destructive))] px-4 py-2 text-sm font-semibold text-[hsl(var(--destructive-foreground))] shadow-sm hover:bg-[hsl(var(--destructive))]/90 sm:w-auto"
             >
               Confirm
             </button>
             <Dialog.Close asChild>
               <button
                 type="button"
-                className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="mt-3 inline-flex w-full justify-center rounded-md bg-[hsl(var(--secondary))] px-4 py-2 text-sm font-semibold text-[hsl(var(--secondary-foreground))] shadow-sm hover:bg-[hsl(var(--accent))] sm:mt-0 sm:w-auto"
               >
                 Cancel
               </button>

@@ -1,19 +1,12 @@
 import React from "react";
 
-interface LoadingOverlayProps {
-  isLoading: boolean;
-}
-
-export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
-  isLoading
+export const LoadingOverlay: React.FC<{ isLoading: boolean }> = ({
+  isLoading,
 }) => {
-  if (!isLoading) {
-    return null;
-  }
-
+  if (!isLoading) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="h-16 w-16 animate-spin rounded-full border-8 border-solid border-white border-t-transparent"></div>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[hsl(var(--background))]/80 backdrop-blur-sm">
+      <div className="h-12 w-12 animate-spin rounded-full border-4 border-solid border-[hsl(var(--primary))] border-t-transparent"></div>
     </div>
   );
 };

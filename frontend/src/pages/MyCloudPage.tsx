@@ -2,15 +2,15 @@ import {
   ArrowDownTrayIcon,
   ArrowTopRightOnSquareIcon,
   PencilIcon,
-  TrashIcon
+  TrashIcon,
 } from "@heroicons/react/24/outline";
-import { DocumentIcon, FolderIcon, PlusIcon } from "@heroicons/react/24/solid";
+import { PlusIcon, FolderIcon } from "@heroicons/react/24/solid";
 import React, {
   useEffect,
   useMemo,
   useState,
   useCallback,
-  useRef
+  useRef,
 } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -19,7 +19,9 @@ import { Breadcrumbs } from "../components/Breadcrumbs";
 import { ConfirmationModal } from "../components/ConfirmationModal";
 import { ContextMenu } from "../components/ContextMenu";
 import { CreateItemModal } from "../components/CreateItemModal";
+import { FileItemCard } from "../components/FileItemCard";
 import { FileViewerModal } from "../components/FileViewerModal";
+import { FolderItemCard } from "../components/FolderItemCard";
 import { LoadingOverlay } from "../components/LoadingOverlay";
 import { Modal } from "../components/Modal";
 import { RenameModal } from "../components/RenameModal";
@@ -28,12 +30,11 @@ import { Breadcrumb, FileItem, FolderData, FolderItem } from "../types";
 
 const buildBreadcrumbs = (currentFolder: FolderData | null): Breadcrumb[] => {
   const crumbs: Breadcrumb[] = [];
-  let folder: FolderItem | null = currentFolder;
+  let folder: FolderItem | null | undefined = currentFolder;
   while (folder?.parent) {
     crumbs.unshift({ id: folder.id, name: folder.name });
     folder = folder.parent;
   }
-
   if (crumbs.length > 1) {
     crumbs.shift();
   }
@@ -76,7 +77,7 @@ const MyCloudPage: React.FC = () => {
   } | null>(null);
   const selectAllCheckboxRef = useRef<HTMLInputElement>(null);
 
-  const fetchData = useCallback(async() => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
       const data = await cloudService.getFolderContents(folderId || null);
@@ -86,7 +87,7 @@ const MyCloudPage: React.FC = () => {
       console.error("Failed to fetch folder data:", error);
       setNotificationModal({
         isOpen: true,
-        message: "Could not load your files. Please try again later."
+        message: "Could not load your files. Please try again later.",
       });
     } finally {
       setIsLoading(false);
@@ -99,7 +100,7 @@ const MyCloudPage: React.FC = () => {
   }, [fetchData]);
 
   const handleAction = useCallback(
-    async(action: () => Promise<any>, successMessage?: string) => {
+    async (action: () => Promise<any>, successMessage?: string) => {
       setIsActionLoading(true);
       try {
         await action();
@@ -116,20 +117,20 @@ const MyCloudPage: React.FC = () => {
         setIsActionLoading(false);
       }
     },
-    [fetchData]
+    [fetchData],
   );
 
   const handleOpen = (item: FileItem | FolderItem, type: "file" | "folder") => {
     if (type === "folder") {
       navigate(`/my-cloud/${item.id}`);
     } else {
-      handleAction(async() => {
+      handleAction(async () => {
         const blob = await cloudService.getFileBlob(item.id);
         const fileURL = URL.createObjectURL(blob);
         setFilePreview({
           url: fileURL,
           type: (item as FileItem).file_type,
-          name: (item as FileItem).file_name
+          name: (item as FileItem).file_name,
         });
       });
     }
@@ -139,9 +140,9 @@ const MyCloudPage: React.FC = () => {
     if (!deleteModal) return;
     const action = deleteModal.isBulk
       ? () =>
-        cloudService.deleteItems(selectedItems.files, selectedItems.folders)
+          cloudService.deleteItems(selectedItems.files, selectedItems.folders)
       : () =>
-        cloudService.deleteSingleItem(deleteModal.item!, deleteModal.type!);
+          cloudService.deleteSingleItem(deleteModal.item!, deleteModal.type!);
 
     handleAction(action, "Item(s) deleted successfully.").then(() => {
       if (deleteModal.isBulk) setSelectedItems({ files: [], folders: [] });
@@ -153,7 +154,7 @@ const MyCloudPage: React.FC = () => {
     if (!renameModal?.item) return;
     handleAction(
       () => cloudService.renameItem(renameModal.item, newName),
-      "Item renamed successfully."
+      "Item renamed successfully.",
     );
     setRenameModal(null);
   };
@@ -161,39 +162,38 @@ const MyCloudPage: React.FC = () => {
   const handleSaveFolder = (name: string) => {
     handleAction(
       () => cloudService.createFolder(name, folderData?.id || null),
-      "Folder created successfully."
+      "Folder created successfully.",
     );
   };
 
   const handleUploadFiles = (files: File[], paths: string[]) => {
-    handleAction(async() => {
+    handleAction(async () => {
       const response = await cloudService.uploadItems(
         files,
         paths,
-        folderData?.id || null
+        folderData?.id || null,
       );
       const { successful_uploads, failed_uploads } = response.data;
       let messageLines = [];
       if (successful_uploads?.length > 0)
         messageLines.push(
-          `${successful_uploads.length} item(s) uploaded successfully.`
+          `${successful_uploads.length} item(s) uploaded successfully.`,
         );
       if (failed_uploads?.length > 0)
         messageLines.push(`\n${failed_uploads.length} item(s) failed.`);
       setNotificationModal({
         isOpen: true,
-        message: messageLines.join(" ") || "Upload complete."
+        message: messageLines.join(" ") || "Upload complete.",
       });
     });
   };
 
   const handleDownload = (
     item: FileItem | FolderItem,
-    type: "file" | "folder"
+    type: "file" | "folder",
   ) => {
-    handleAction(async() => {
-      let blob;
-      let filename;
+    handleAction(async () => {
+      let blob, filename;
       if (type === "file") {
         blob = await cloudService.getFileBlob(item.id);
         filename = (item as FileItem).file_name;
@@ -213,10 +213,10 @@ const MyCloudPage: React.FC = () => {
   };
 
   const handleBulkDownload = () => {
-    handleAction(async() => {
+    handleAction(async () => {
       const blob = await cloudService.downloadItems(
         selectedItems.files,
-        selectedItems.folders
+        selectedItems.folders,
       );
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -232,7 +232,7 @@ const MyCloudPage: React.FC = () => {
   const handleSelectionChange = (
     id: string,
     type: "file" | "folder",
-    checked: boolean
+    checked: boolean,
   ) => {
     setSelectedItems((prev) => {
       const newSet = new Set(type === "file" ? prev.files : prev.folders);
@@ -240,7 +240,7 @@ const MyCloudPage: React.FC = () => {
       else newSet.delete(id);
       return {
         ...prev,
-        [type === "file" ? "files" : "folders"]: Array.from(newSet)
+        [type === "file" ? "files" : "folders"]: Array.from(newSet),
       };
     });
   };
@@ -258,40 +258,52 @@ const MyCloudPage: React.FC = () => {
   const menuItems = (item: FileItem | FolderItem, type: "file" | "folder") => [
     {
       label: "Open",
-      onClick: () => handleOpen(item, type),
-      icon: <ArrowTopRightOnSquareIcon className="h-5 w-5" />
+      onSelect: (e: Event) => {
+        e.preventDefault();
+        handleOpen(item, type);
+      },
+      icon: <ArrowTopRightOnSquareIcon className="h-5 w-5" />,
     },
     {
       label: "Download",
-      onClick: () => handleDownload(item, type),
-      icon: <ArrowDownTrayIcon className="h-5 w-5" />
+      onSelect: (e: Event) => {
+        e.preventDefault();
+        handleDownload(item, type);
+      },
+      icon: <ArrowDownTrayIcon className="h-5 w-5" />,
     },
     {
       label: "Rename",
-      onClick: () => setRenameModal({ isOpen: true, item }),
-      icon: <PencilIcon className="h-5 w-5" />
+      onSelect: (e: Event) => {
+        e.preventDefault();
+        setRenameModal({ isOpen: true, item });
+      },
+      icon: <PencilIcon className="h-5 w-5" />,
     },
     {
       label: "Delete",
-      onClick: () => setDeleteModal({ isOpen: true, item, type }),
+      onSelect: (e: Event) => {
+        e.preventDefault();
+        setDeleteModal({ isOpen: true, item, type });
+      },
       icon: <TrashIcon className="h-5 w-5" />,
-      className: "text-red-600"
-    }
+      className:
+        "text-[hsl(var(--destructive))] data-[highlighted]:text-[hsl(var(--destructive-foreground))] data-[highlighted]:bg-[hsl(var(--destructive))]/90",
+    },
   ];
 
   const hasSelection = useMemo(
     () => selectedItems.files.length > 0 || selectedItems.folders.length > 0,
-    [selectedItems]
+    [selectedItems],
   );
-
   const totalItems = useMemo(
     () =>
       (folderData?.files.length || 0) + (folderData?.sub_folders.length || 0),
-    [folderData]
+    [folderData],
   );
   const totalSelected = useMemo(
     () => selectedItems.files.length + selectedItems.folders.length,
-    [selectedItems]
+    [selectedItems],
   );
 
   useEffect(() => {
@@ -304,101 +316,125 @@ const MyCloudPage: React.FC = () => {
   }, [totalSelected, totalItems]);
 
   return (
-    <div className="relative h-full p-4 sm:p-6">
+    <div className="relative h-full p-4 sm:p-6 lg:p-8">
       <LoadingOverlay isLoading={isActionLoading || isLoading} />
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <Breadcrumbs crumbs={breadcrumbs} />
-          <h1 className="mt-4 text-3xl font-bold text-gray-800">
-            {folderData?.parent === null
-              ? "Home"
-              : folderData?.name || "My Cloud"}
-          </h1>
+
+      <div>
+        <Breadcrumbs crumbs={breadcrumbs} />
+        <h1 className="mt-2 text-3xl font-bold tracking-tight text-[hsl(var(--foreground))]">
+          {folderData?.parent === null ? "My Cloud" : folderData?.name || "..."}
+        </h1>
+      </div>
+
+      <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-[hsl(var(--border))] pb-4">
+        <div className="flex items-center gap-3">
+          <input
+            ref={selectAllCheckboxRef}
+            type="checkbox"
+            className="h-4 w-4 rounded border-[hsl(var(--input))] bg-[hsl(var(--card))] text-[hsl(var(--primary))] focus:ring-[hsl(var(--primary))]"
+            onChange={(e) => handleSelectAll(e.target.checked)}
+            disabled={totalItems === 0}
+          />
+          <label className="text-sm font-medium text-[hsl(var(--muted-foreground))]">
+            {totalSelected > 0 ? `${totalSelected} selected` : "Select All"}
+          </label>
         </div>
-        {hasSelection && user?.role !== "guest" && (
-          <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          {hasSelection && user?.role !== "guest" ? (
+            <>
+              <button
+                onClick={handleBulkDownload}
+                className="flex items-center gap-2 rounded-md bg-[hsl(var(--secondary))] px-3 py-2 text-sm font-semibold text-[hsl(var(--secondary-foreground))] shadow-sm hover:bg-[hsl(var(--accent))] transition"
+              >
+                <ArrowDownTrayIcon className="h-5 w-5" /> Download
+              </button>
+              <button
+                onClick={() => setDeleteModal({ isOpen: true, isBulk: true })}
+                className="flex items-center gap-2 rounded-md bg-[hsl(var(--destructive))] px-3 py-2 text-sm font-semibold text-[hsl(var(--destructive-foreground))] shadow-sm hover:bg-[hsl(var(--destructive))]/80 transition"
+              >
+                <TrashIcon className="h-5 w-5" /> Delete
+              </button>
+            </>
+          ) : (
             <button
-              onClick={handleBulkDownload}
-              className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white shadow-md transition hover:bg-blue-700"
+              onClick={() => setIsCreateModalOpen(true)}
+              className="flex items-center gap-2 rounded-md bg-[hsl(var(--primary))] px-3 py-2 text-sm font-semibold text-[hsl(var(--primary-foreground))] shadow-sm hover:bg-[hsl(var(--primary))]/90 transition"
             >
-              <ArrowDownTrayIcon className="h-5 w-5" /> Download
+              <PlusIcon className="h-5 w-5" /> New
             </button>
-            <button
-              onClick={() => setDeleteModal({ isOpen: true, isBulk: true })}
-              className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-white shadow-md transition hover:bg-red-700"
-            >
-              <TrashIcon className="h-5 w-5" /> Delete
-            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-8">
+        {totalItems === 0 && !isLoading && (
+          <div className="text-center py-16 px-6 rounded-lg bg-[hsl(var(--muted))]/50">
+            <FolderIcon className="mx-auto h-12 w-12 text-[hsl(var(--muted-foreground))]" />
+            <h3 className="mt-2 text-xl font-semibold text-[hsl(var(--foreground))]">
+              Empty Folder
+            </h3>
+            <p className="mt-1 text-[hsl(var(--muted-foreground))]">
+              Upload something or create a new folder to get started.
+            </p>
           </div>
         )}
-      </div>
+        {folderData?.sub_folders && folderData.sub_folders.length > 0 && (
+          <section>
+            <h2 className="text-base font-semibold text-[hsl(var(--muted-foreground))] mb-4">
+              Folders
+            </h2>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {folderData.sub_folders.map((folder) => (
+                <ContextMenu
+                  key={folder.id}
+                  items={menuItems(folder, "folder")}
+                >
+                  <FolderItemCard
+                    folder={folder}
+                    isSelected={selectedItems.folders.includes(folder.id)}
+                    onDoubleClick={() => handleOpen(folder, "folder")}
+                    onSelectionChange={(checked) =>
+                      handleSelectionChange(folder.id, "folder", checked)
+                    }
+                  />
+                </ContextMenu>
+              ))}
+            </div>
+          </section>
+        )}
 
-      <div className="mt-4 flex items-center gap-2">
-        <input
-          ref={selectAllCheckboxRef}
-          type="checkbox"
-          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-          onChange={(e) => handleSelectAll(e.target.checked)}
-          disabled={totalItems === 0}
-        />
-        <label className="text-sm text-gray-600">Select All</label>
-      </div>
-
-      <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-        {folderData?.sub_folders.map((folder) => (
-          <div key={folder.id} className="relative">
-            <ContextMenu items={menuItems(folder, "folder")}>
-              <div
-                onDoubleClick={() => handleOpen(folder, "folder")}
-                className="flex h-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 bg-white p-4 text-center shadow-sm transition-all hover:border-blue-500 hover:shadow-md"
-              >
-                <FolderIcon className="h-16 w-16 text-blue-500" />
-                <span className="mt-2 block w-full truncate text-sm font-medium text-gray-900">
-                  {folder.name}
-                </span>
-              </div>
-            </ContextMenu>
-            <input
-              type="checkbox"
-              className="absolute top-2 left-2 h-4 w-4"
-              checked={selectedItems.folders.includes(folder.id)}
-              onChange={(e) =>
-                handleSelectionChange(folder.id, "folder", e.target.checked)
-              }
-            />
-          </div>
-        ))}
-        {folderData?.files.map((file) => (
-          <div key={file.id} className="relative">
-            <ContextMenu items={menuItems(file, "file")}>
-              <div
-                onDoubleClick={() => handleOpen(file, "file")}
-                className="flex h-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-transparent bg-white p-4 text-center shadow-sm transition-all hover:border-blue-500 hover:shadow-md"
-              >
-                <DocumentIcon className="h-16 w-16 text-gray-500" />
-                <span className="mt-2 block w-full truncate text-sm font-medium text-gray-900">
-                  {file.file_name}
-                </span>
-              </div>
-            </ContextMenu>
-            <input
-              type="checkbox"
-              className="absolute top-2 left-2 h-4 w-4"
-              checked={selectedItems.files.includes(file.id)}
-              onChange={(e) =>
-                handleSelectionChange(file.id, "file", e.target.checked)
-              }
-            />
-          </div>
-        ))}
+        {folderData?.files && folderData.files.length > 0 && (
+          <section
+            className={folderData?.sub_folders.length > 0 ? "mt-12" : ""}
+          >
+            <h2 className="text-base font-semibold text-[hsl(var(--muted-foreground))] mb-4">
+              Files
+            </h2>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {folderData.files.map((file) => (
+                <ContextMenu key={file.id} items={menuItems(file, "file")}>
+                  <FileItemCard
+                    file={file}
+                    isSelected={selectedItems.files.includes(file.id)}
+                    onDoubleClick={() => handleOpen(file, "file")}
+                    onSelectionChange={(checked) =>
+                      handleSelectionChange(file.id, "file", checked)
+                    }
+                  />
+                </ContextMenu>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
       {user?.role !== "guest" && !hasSelection && (
         <button
           onClick={() => setIsCreateModalOpen(true)}
-          className="fixed bottom-8 right-8 flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition hover:bg-blue-700"
+          className="fixed bottom-8 right-8 flex h-14 w-14 items-center justify-center rounded-full bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] shadow-xl transition hover:bg-[hsl(var(--primary))]/90 hover:scale-105"
         >
           <PlusIcon className="h-8 w-8" />
+          <span className="sr-only">Create new item</span>
         </button>
       )}
 
@@ -430,10 +466,13 @@ const MyCloudPage: React.FC = () => {
         isOpen={!!deleteModal}
         onClose={() => setDeleteModal(null)}
         onConfirm={confirmDelete}
-        title={deleteModal?.isBulk ? "Delete Selected Items" : "Delete"}
+        title={deleteModal?.isBulk ? "Delete Selected Items" : "Delete Item"}
       >
-        Are you sure you want to delete the selected items? This action cannot
-        be undone.
+        Are you sure you want to delete the selected{" "}
+        {deleteModal?.isBulk
+          ? `${totalSelected} items`
+          : `"${deleteModal?.item?.name || deleteModal?.item?.file_name}"`}
+        ? This action cannot be undone.
       </ConfirmationModal>
     </div>
   );

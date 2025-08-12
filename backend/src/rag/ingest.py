@@ -17,10 +17,13 @@ def chunk_text(text, n=CHUNK_WORDS):
 
 def extract_text_from_contents(contents: bytes, mime_type: str) -> str:
     if mime_type == "application/pdf":
-        import fitz
+        from io import BytesIO
 
-        with fitz.open(stream=contents, filetype="pdf") as doc:
-            return " ".join(page.get_text() for page in doc).strip()
+        from pdfminer.high_level import extract_text
+
+        with BytesIO(contents) as pdf_stream:
+            text = extract_text(pdf_stream)
+        return text.strip()
     elif mime_type == "text/plain":
         return contents.decode("utf-8", errors="ignore").strip()
     elif mime_type == "text/csv":

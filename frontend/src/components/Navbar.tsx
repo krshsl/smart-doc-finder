@@ -1,92 +1,94 @@
+import { Bars3Icon } from "@heroicons/react/24/outline";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/solid";
 import * as Switch from "@radix-ui/react-switch";
 import React, { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 
-const Navbar: React.FC = () => {
+const Navbar: React.FC<{ toggleSidebar: () => void }> = ({ toggleSidebar }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const [query, setQuery] = useState<string>(searchParams.get("q") || "");
   const [aiSearch, setAiSearch] = useState<boolean>(
-    searchParams.get("ai") === "1"
+    location.pathname.includes("/search/ai"),
   );
 
   useEffect(() => {
     setQuery(searchParams.get("q") || "");
-    setAiSearch(searchParams.get("ai") === "1");
-  }, [searchParams]);
+    setAiSearch(location.pathname.includes("/search/ai"));
+  }, [searchParams, location.pathname]);
 
-  const handleSearch = (e: React.FormEvent<HTMLFormElement>): void => {
+  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (query.trim()) {
       const basePath = aiSearch ? "/search/ai" : "/search";
-      const searchUrl = `${basePath}?q=${encodeURIComponent(query.trim())}${
-        aiSearch ? "&ai=1" : ""
-      }`;
+      const searchUrl = `${basePath}?q=${encodeURIComponent(query.trim())}`;
       navigate(searchUrl);
     }
   };
 
   return (
-    <header className="flex-shrink-0 border-b border-gray-200 bg-white">
-      <div className="flex h-16 items-center justify-center px-4 sm:px-6 lg:px-8">
-        <div className="w-full max-w-2xl">
-          <form
-            onSubmit={handleSearch}
-            className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2 shadow-sm border border-gray-200"
-          >
-            <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 flex-shrink-0" />
+    <header className="flex h-20 flex-shrink-0 items-center justify-between border-b border-[hsl(var(--border))] bg-[hsl(var(--card))] px-4 sm:px-6 lg:px-8">
+      <button
+        onClick={toggleSidebar}
+        className="lg:hidden p-2 -ml-2 text-[hsl(var(--muted-foreground))]"
+        aria-label="Open sidebar"
+      >
+        <Bars3Icon className="h-6 w-6" />
+      </button>
 
-            <input
-              id="search"
-              name="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="flex-1 bg-transparent border-none focus:outline-none text-gray-900 placeholder:text-gray-400 sm:text-sm"
-              placeholder="Search for files and folders"
-              type="search"
-            />
+      <div className="flex-1 flex justify-center lg:justify-start">
+        <form
+          onSubmit={handleSearch}
+          className="flex w-full max-w-md items-center gap-3 rounded-lg border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-4 py-2 shadow-sm"
+        >
+          <MagnifyingGlassIcon className="h-5 w-5 text-[hsl(var(--muted-foreground))]" />
+          <input
+            className="flex-1 bg-transparent border-none p-0 focus:ring-0 placeholder:text-[hsl(var(--muted-foreground))] text-sm outline-none"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search files and folders..."
+            type="search"
+          />
+          <div className="flex items-center gap-2 pl-3 border-l border-[hsl(var(--border))]">
+            {aiSearch && (
+              <div className="relative">
+                <span className="absolute -top-3 [rotate:4deg] -left-0.5 text-blue-500 text-xs animate-sparkle">
+                  ✦
+                </span>
+                <span className="absolute bottom-[0.15rem] [rotate:-15deg] -right-[0.95rem] text-pink-500 text-[10px] animate-sparkle [animation-delay:0.75s]">
+                  ✦
+                </span>
+              </div>
+            )}
+            <label
+              htmlFor="ai-search"
+              className="text-xs font-medium whitespace-nowrap pr-1 text-[hsl(var(--muted-foreground))]"
+            >
+              AI
+            </label>
+            <Switch.Root
+              className="relative flex items-center w-[40px] h-[24px] rounded-full border transition-colors duration-200 data-[state=checked]:border-transparent data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-blue-500 data-[state=checked]:to-purple-500 data-[state=unchecked]:bg-[hsl(var(--input))]"
+              id="ai-search"
+              checked={aiSearch}
+              onCheckedChange={setAiSearch}
+            >
+              <Switch.Thumb
+                className="
+                pointer-events-none block -ml-[0.075rem] h-[18px] w-[18px] transform rounded-full
+                shadow-lg ring-1 transition-all duration-200
+                data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-1
+                shadow-black/20 ring-black/5
+                dark:shadow-black/40 dark:ring-white/10
 
-            <div className="w-px h-6 bg-gray-200 mx-3" />
-
-            <div className="flex items-center gap-2 relative mr-1">
-              {aiSearch && (
-                <>
-                  <span className="absolute -top-1.5 rotate-3 -left-2.5 text-blue-500 text-xs animate-sparkle">
-                    ✦
-                  </span>
-                  <span className="absolute -bottom-1.5 -rotate-6 -right-2 text-pink-500 text-[10px] animate-sparkle [animation-delay:0.75s]">
-                    ✦
-                  </span>
-                </>
-              )}
-
-              <span
-                className={`text-xs font-medium whitespace-nowrap transition-colors ${
-                  aiSearch ? "text-blue-600" : "text-gray-600"
-                }`}
-              >
-                {aiSearch ? "AI On" : "AI Off"}
-              </span>
-              <Switch.Root
-                className={`relative w-[40px] h-[22px] rounded-full border transition-colors duration-200 ${
-                  aiSearch
-                    ? "bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 border-purple-50"
-                    : "bg-gray-200 border-gray-300"
-                }`}
-                id="ai-search"
-                checked={aiSearch}
-                onCheckedChange={(checked: boolean) => setAiSearch(checked)}
-              >
-                <Switch.Thumb
-                  className={`block w-[18px] h-[18px] bg-white rounded-full shadow transform transition-transform duration-200 ${
-                    aiSearch ? "translate-x-[18px]" : "translate-x-[2px]"
-                  }`}
-                />
-              </Switch.Root>
-            </div>
-          </form>
-        </div>
+                data-[state=unchecked]:bg-[hsl(var(--foreground))]
+                data-[state=checked]:bg-white
+                dark:bg-[hsl(var(--foreground))]
+              "
+              />
+            </Switch.Root>
+          </div>
+        </form>
       </div>
     </header>
   );

@@ -1,13 +1,20 @@
 import {
   ArrowDownTrayIcon,
-  ArrowTopRightOnSquareIcon
+  ArrowTopRightOnSquareIcon,
+  FolderArrowDownIcon,
 } from "@heroicons/react/24/outline";
-import { FolderIcon, DocumentIcon } from "@heroicons/react/24/solid";
 import React, { useEffect, useState } from "react";
-import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
+import {
+  useSearchParams,
+  useNavigate,
+  useLocation,
+  Link,
+} from "react-router-dom";
 
 import { ContextMenu } from "../components/ContextMenu";
+import { FileItemCard } from "../components/FileItemCard";
 import { FileViewerModal } from "../components/FileViewerModal";
+import { FolderItemCard } from "../components/FolderItemCard";
 import { LoadingOverlay } from "../components/LoadingOverlay";
 import * as cloudService from "../services/cloudService";
 import * as searchService from "../services/searchService";
@@ -34,7 +41,7 @@ const SearchPage: React.FC = () => {
 
   useEffect(() => {
     if (query) {
-      const fetchResults = async() => {
+      const fetchResults = async () => {
         setIsLoading(true);
         try {
           const data = await searchService.search(query, isAiSearch);
@@ -51,9 +58,9 @@ const SearchPage: React.FC = () => {
       setResults({ files: [], folders: [] });
       setIsLoading(false);
     }
-  }, [query, location.key]);
+  }, [query, isAiSearch]);
 
-  const handleOpenFile = async(item: FileItem) => {
+  const handleOpenFile = async (item: FileItem) => {
     setIsActionLoading(true);
     try {
       const blob = await cloudService.getFileBlob(item.id);
@@ -61,7 +68,7 @@ const SearchPage: React.FC = () => {
       setFilePreview({
         url: fileURL,
         type: item.file_type,
-        name: item.file_name
+        name: item.file_name,
       });
     } catch (error) {
       console.error("Failed to fetch file for preview:", error);
@@ -82,14 +89,13 @@ const SearchPage: React.FC = () => {
     }
   };
 
-  const handleDownload = async(
+  const handleDownload = async (
     item: FileItem | FolderItem,
-    type: "file" | "folder"
+    type: "file" | "folder",
   ) => {
     setIsActionLoading(true);
     try {
-      let blob;
-      let filename;
+      let blob, filename;
       if (type === "file") {
         blob = await cloudService.getFileBlob(item.id);
         filename = (item as FileItem).file_name;
@@ -112,107 +118,135 @@ const SearchPage: React.FC = () => {
     }
   };
 
+  const folderMenuItems = (item: FolderItem) => [
+    {
+      label: "Open",
+      onSelect: (e: Event) => {
+        e.preventDefault();
+        handleOpenFolder(item);
+      },
+      icon: <ArrowTopRightOnSquareIcon className="h-5 w-5" />,
+    },
+    {
+      label: "Download",
+      onSelect: (e: Event) => {
+        e.preventDefault();
+        handleDownload(item, "folder");
+      },
+      icon: <ArrowDownTrayIcon className="h-5 w-5" />,
+    },
+  ];
+
+  const fileMenuItems = (item: FileItem) => [
+    {
+      label: "Open",
+      onSelect: (e: Event) => {
+        e.preventDefault();
+        handleOpenFile(item);
+      },
+      icon: <ArrowTopRightOnSquareIcon className="h-5 w-5" />,
+    },
+    {
+      label: "Download",
+      onSelect: (e: Event) => {
+        e.preventDefault();
+        handleDownload(item, "file");
+      },
+      icon: <ArrowDownTrayIcon className="h-5 w-5" />,
+    },
+    {
+      label: "Go to folder",
+      onSelect: (e: Event) => {
+        e.preventDefault();
+        handleGoToFolder(item);
+      },
+      icon: <FolderArrowDownIcon className="h-5 w-5" />,
+    },
+  ];
+
   return (
-    <div className="p-4 sm:p-6">
-      <LoadingOverlay isLoading={isActionLoading} />
-      <h1 className="text-3xl font-bold text-gray-800">Search Results</h1>
-      <p className="mt-2 text-gray-500">
+    <div className="p-6 lg:p-8">
+      <LoadingOverlay isLoading={isActionLoading || isLoading} />
+      <h1 className="text-4xl font-bold text-[hsl(var(--foreground))]">
+        Search Results
+      </h1>
+      <p className="mt-2 text-[hsl(var(--muted-foreground))]">
         {isLoading
           ? "Searching..."
           : `Found ${
-            results.folders.length + results.files.length
-          } results for "${query}"`}
+              results.folders.length + results.files.length
+            } results for `}
+        <span className="font-semibold text-[hsl(var(--foreground))]">
+          "{query}"
+        </span>
+        {isAiSearch && (
+          <span className="ml-2 inline-block bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent font-bold">
+            (AI-Powered)
+          </span>
+        )}
       </p>
 
-      <div className="mt-8">
+      <div className="mt-10">
         {isLoading ? (
-          <p>Loading...</p>
+          <div className="text-center text-[hsl(var(--muted-foreground))]">
+            Loading results...
+          </div>
+        ) : results.folders.length === 0 && results.files.length === 0 ? (
+          <div className="text-center py-16 px-6 rounded-lg bg-[hsl(var(--card))] border-[hsl(var(--border))]">
+            <h3 className="text-xl font-semibold text-[hsl(var(--foreground))]">
+              No results found
+            </h3>
+            <p className="mt-2 text-[hsl(var(--muted-foreground))]">
+              Try searching for something else, or go back to{" "}
+              <Link
+                to="/my-cloud"
+                className="text-[hsl(var(--primary))] hover:underline"
+              >
+                your cloud
+              </Link>
+              .
+            </p>
+          </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-12">
             {results.folders.length > 0 && (
-              <div>
-                <h2 className="text-xl font-semibold text-gray-700">Folders</h2>
-                <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              <section>
+                <h2 className="text-lg font-semibold text-[hsl(var(--muted-foreground))] mb-4">
+                  Folders
+                </h2>
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                   {results.folders.map((folder) => (
                     <ContextMenu
                       key={folder.id}
-                      items={[
-                        {
-                          label: "Open",
-                          onClick: () => handleOpenFolder(folder),
-                          icon: (
-                            <ArrowTopRightOnSquareIcon className="h-5 w-5" />
-                          )
-                        },
-                        {
-                          label: "Download",
-                          onClick: () => handleDownload(folder, "folder"),
-                          icon: <ArrowDownTrayIcon className="h-5 w-5" />
-                        }
-                      ]}
+                      items={folderMenuItems(folder)}
                     >
-                      <div
+                      <FolderItemCard
+                        folder={folder}
                         onDoubleClick={() => handleOpenFolder(folder)}
-                        className="flex h-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-transparent bg-white p-4 text-center shadow-sm transition-all hover:border-blue-500 hover:shadow-md"
-                      >
-                        <FolderIcon className="h-16 w-16 text-blue-500" />
-                        <span className="mt-2 block w-full truncate text-sm font-medium text-gray-900">
-                          {folder.name}
-                        </span>
-                      </div>
+                      />
                     </ContextMenu>
                   ))}
                 </div>
-              </div>
+              </section>
             )}
 
             {results.files.length > 0 && (
-              <div>
-                <h2 className="text-xl font-semibold text-gray-700">Files</h2>
-                <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              <section>
+                <h2 className="text-lg font-semibold text-[hsl(var(--muted-foreground))] mb-4">
+                  Files
+                </h2>
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                   {results.files.map((file) => (
-                    <ContextMenu
-                      key={file.id}
-                      items={[
-                        {
-                          label: "Open",
-                          onClick: () => handleOpenFile(file),
-                          icon: (
-                            <ArrowTopRightOnSquareIcon className="h-5 w-5" />
-                          )
-                        },
-                        {
-                          label: "Download",
-                          onClick: () => handleDownload(file, "file"),
-                          icon: <ArrowDownTrayIcon className="h-5 w-5" />
-                        },
-                        {
-                          label: "Go to Folder",
-                          onClick: () => handleGoToFolder(file),
-                          icon: (
-                            <ArrowTopRightOnSquareIcon className="h-5 w-5" />
-                          )
-                        }
-                      ]}
-                    >
-                      <div
+                    <ContextMenu key={file.id} items={fileMenuItems(file)}>
+                      <FileItemCard
+                        file={file}
+                        isAiSearch={isAiSearch}
                         onDoubleClick={() => handleOpenFile(file)}
-                        className="relative flex h-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-transparent bg-white p-4 text-center shadow-sm transition-all hover:border-blue-500 hover:shadow-md"
-                      >
-                        {isAiSearch && typeof file.score === "number" && (
-                          <div className="absolute top-0 right-0 rounded-bl-lg bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">
-                            {(file.score * 100).toFixed(0)}%
-                          </div>
-                        )}
-                        <DocumentIcon className="h-16 w-16 text-gray-500" />
-                        <span className="mt-2 block w-full truncate text-sm font-medium text-gray-900">
-                          {file.file_name}
-                        </span>
-                      </div>
+                      />
                     </ContextMenu>
                   ))}
                 </div>
-              </div>
+              </section>
             )}
           </div>
         )}
