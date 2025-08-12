@@ -14,35 +14,39 @@ export const FolderItemCard: React.FC<FolderItemCardProps> = ({
   folder,
   isSelected,
   onDoubleClick,
-  onSelectionChange
+  onSelectionChange,
 }) => {
   const handleCheckboxClick = (e: React.MouseEvent<HTMLInputElement>) => {
-    e.stopPropagation(); // Prevent card selection from firing
+    e.stopPropagation();
   };
 
   return (
     <div
       onDoubleClick={onDoubleClick}
-      className={`group relative flex h-full cursor-pointer flex-col items-center justify-center rounded-xl p-4 text-center transition-all duration-200 ease-in-out hover:-translate-y-1 hover:shadow-xl ${
+      className={`group relative flex h-full cursor-pointer flex-col rounded-lg border bg-[hsl(var(--card))] p-4 text-left transition-shadow duration-200 ease-in-out hover:shadow-md ${
         isSelected
-          ? "bg-brand-50 shadow-lg ring-2 ring-brand-500"
-          : "bg-white shadow-md shadow-slate-200/50 border border-slate-200 hover:border-brand-300"
+          ? "ring-2 ring-[hsl(var(--primary))] border-[hsl(var(--primary))]"
+          : "shadow-sm"
       }`}
     >
       {onSelectionChange && (
         <input
           type="checkbox"
-          className="absolute top-3 left-3 h-4 w-4 z-10 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-          checked={isSelected}
+          className="absolute top-3 left-3 h-4 w-4 z-10 rounded border-[hsl(var(--input))] bg-[hsl(var(--card))] text-[hsl(var(--primary))] focus:ring-[hsl(var(--primary))]"
+          checked={!!isSelected}
           onChange={(e) => onSelectionChange(e.target.checked)}
           onClick={handleCheckboxClick}
         />
       )}
 
-      <FolderIcon className="h-16 w-16 text-amber-400" />
-      <span className="mt-3 block w-full truncate text-sm font-semibold text-slate-800 group-hover:text-brand-600">
-        {folder.name}
-      </span>
+      <div className="flex items-center gap-3">
+        <FolderIcon className="h-8 w-8 text-yellow-500 flex-shrink-0" />
+        <div className="truncate">
+          <span className="block w-full truncate text-sm font-semibold text-[hsl(var(--foreground))]">
+            {folder.name}
+          </span>
+        </div>
+      </div>
     </div>
   );
 };

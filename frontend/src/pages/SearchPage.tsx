@@ -121,12 +121,18 @@ const SearchPage: React.FC = () => {
   const folderMenuItems = (item: FolderItem) => [
     {
       label: "Open",
-      onClick: () => handleOpenFolder(item),
+      onSelect: (e: Event) => {
+        e.preventDefault();
+        handleOpenFolder(item);
+      },
       icon: <ArrowTopRightOnSquareIcon className="h-5 w-5" />,
     },
     {
       label: "Download",
-      onClick: () => handleDownload(item, "folder"),
+      onSelect: (e: Event) => {
+        e.preventDefault();
+        handleDownload(item, "folder");
+      },
       icon: <ArrowDownTrayIcon className="h-5 w-5" />,
     },
   ];
@@ -134,17 +140,26 @@ const SearchPage: React.FC = () => {
   const fileMenuItems = (item: FileItem) => [
     {
       label: "Open",
-      onClick: () => handleOpenFile(item),
+      onSelect: (e: Event) => {
+        e.preventDefault();
+        handleOpenFile(item);
+      },
       icon: <ArrowTopRightOnSquareIcon className="h-5 w-5" />,
     },
     {
       label: "Download",
-      onClick: () => handleDownload(item, "file"),
+      onSelect: (e: Event) => {
+        e.preventDefault();
+        handleDownload(item, "file");
+      },
       icon: <ArrowDownTrayIcon className="h-5 w-5" />,
     },
     {
       label: "Go to folder",
-      onClick: () => handleGoToFolder(item),
+      onSelect: (e: Event) => {
+        e.preventDefault();
+        handleGoToFolder(item);
+      },
       icon: <FolderArrowDownIcon className="h-5 w-5" />,
     },
   ];
@@ -152,14 +167,18 @@ const SearchPage: React.FC = () => {
   return (
     <div className="p-6 lg:p-8">
       <LoadingOverlay isLoading={isActionLoading || isLoading} />
-      <h1 className="text-4xl font-bold text-slate-800">Search Results</h1>
-      <p className="mt-2 text-slate-500">
+      <h1 className="text-4xl font-bold text-[hsl(var(--foreground))]">
+        Search Results
+      </h1>
+      <p className="mt-2 text-[hsl(var(--muted-foreground))]">
         {isLoading
           ? "Searching..."
           : `Found ${
               results.folders.length + results.files.length
             } results for `}
-        <span className="font-semibold text-slate-700">"{query}"</span>
+        <span className="font-semibold text-[hsl(var(--foreground))]">
+          "{query}"
+        </span>
         {isAiSearch && (
           <span className="ml-2 inline-block bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent font-bold">
             (AI-Powered)
@@ -169,15 +188,20 @@ const SearchPage: React.FC = () => {
 
       <div className="mt-10">
         {isLoading ? (
-          <div className="text-center text-slate-500">Loading results...</div>
+          <div className="text-center text-[hsl(var(--muted-foreground))]">
+            Loading results...
+          </div>
         ) : results.folders.length === 0 && results.files.length === 0 ? (
-          <div className="text-center py-16 px-6 rounded-lg bg-white border border-slate-200">
-            <h3 className="text-xl font-semibold text-slate-800">
+          <div className="text-center py-16 px-6 rounded-lg bg-[hsl(var(--card))] border-[hsl(var(--border))]">
+            <h3 className="text-xl font-semibold text-[hsl(var(--foreground))]">
               No results found
             </h3>
-            <p className="mt-2 text-slate-500">
+            <p className="mt-2 text-[hsl(var(--muted-foreground))]">
               Try searching for something else, or go back to{" "}
-              <Link to="/my-cloud" className="text-brand-600 hover:underline">
+              <Link
+                to="/my-cloud"
+                className="text-[hsl(var(--primary))] hover:underline"
+              >
                 your cloud
               </Link>
               .
@@ -187,7 +211,7 @@ const SearchPage: React.FC = () => {
           <div className="space-y-12">
             {results.folders.length > 0 && (
               <section>
-                <h2 className="text-lg font-semibold text-slate-600 mb-4">
+                <h2 className="text-lg font-semibold text-[hsl(var(--muted-foreground))] mb-4">
                   Folders
                 </h2>
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -208,7 +232,7 @@ const SearchPage: React.FC = () => {
 
             {results.files.length > 0 && (
               <section>
-                <h2 className="text-lg font-semibold text-slate-600 mb-4">
+                <h2 className="text-lg font-semibold text-[hsl(var(--muted-foreground))] mb-4">
                   Files
                 </h2>
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">

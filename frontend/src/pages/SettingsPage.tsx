@@ -5,6 +5,7 @@ import {
 } from "@heroicons/react/24/outline";
 import React, { useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import * as Tabs from "@radix-ui/react-tabs";
 
 import { useAuth } from "../auth/AuthContext";
 import { ConfirmationModal } from "../components/ConfirmationModal";
@@ -37,96 +38,102 @@ const SettingsPage: React.FC = () => {
     }
   };
 
+  const isAdmin = user?.role === "admin";
+
   return (
     <>
       <LoadingOverlay isLoading={isActionLoading} />
       <div className="p-6 lg:p-8">
-        <h1 className="text-4xl font-bold text-slate-800">Settings</h1>
-        <p className="mt-2 text-base text-slate-500">
+        <h1 className="text-3xl font-bold tracking-tight text-[hsl(var(--foreground))]">
+          Settings
+        </h1>
+        <p className="mt-2 text-[hsl(var(--muted-foreground))]">
           Manage your account and system settings.
         </p>
 
-        <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* General Settings Card */}
-          <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-800">
-              General Settings
-            </h2>
-            <div className="mt-6 space-y-6">
-              <div>
-                <h3 className="text-lg font-medium text-slate-700">
+        <Tabs.Root defaultValue="general" className="mt-8 max-w-4xl">
+          <Tabs.List className="border-b border-[hsl(var(--border))]">
+            <Tabs.Trigger
+              value="general"
+              className="px-4 py-2 text-sm font-medium text-[hsl(var(--muted-foreground))] data-[state=active]:text-[hsl(var(--primary))] data-[state=active]:border-b-2 data-[state=active]:border-[hsl(var(--primary))]"
+            >
+              General
+            </Tabs.Trigger>
+            {isAdmin && (
+              <Tabs.Trigger
+                value="admin"
+                className="px-4 py-2 text-sm font-medium text-[hsl(var(--muted-foreground))] data-[state=active]:text-[hsl(var(--primary))] data-[state=active]:border-b-2 data-[state=active]:border-[hsl(var(--primary))]"
+              >
+                Admin
+              </Tabs.Trigger>
+            )}
+          </Tabs.List>
+          <Tabs.Content value="general" className="pt-8">
+            <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-6 shadow-sm">
+              <h2 className="text-xl font-semibold text-[hsl(var(--foreground))]">
+                General Settings
+              </h2>
+              <div className="mt-6 border-t border-[hsl(var(--border))] pt-6">
+                <h3 className="text-lg font-medium text-[hsl(var(--foreground))]">
                   Profile Information
                 </h3>
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-sm text-[hsl(var(--muted-foreground))]">
                   Update your account's profile information and email address.
                 </p>
                 <Link
                   to="/settings/edit-profile"
-                  className="mt-3 inline-flex items-center gap-2 rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-black shadow-sm hover:bg-brand-500 transition"
+                  className="mt-4 inline-flex items-center gap-2 rounded-md bg-[hsl(var(--primary))] px-3 py-2 text-sm font-semibold text-[hsl(var(--primary-foreground))] shadow-sm hover:bg-[hsl(var(--primary))]/90 transition"
                 >
-                  <PencilSquareIcon className="h-5 w-5" />
-                  Edit Your Profile
+                  <PencilSquareIcon className="h-5 w-5" /> Edit Profile
                 </Link>
               </div>
-
-              <div className="border-t border-slate-200 pt-6">
-                <h3 className="text-lg font-medium text-red-600">
+              <div className="mt-6 border-t border-[hsl(var(--border))] pt-6">
+                <h3 className="text-lg font-medium text-[hsl(var(--destructive))]">
                   Delete Account
                 </h3>
-                <p className="mt-1 text-sm text-slate-500">
-                  Once you delete your account, there is no going back. Please
-                  be certain.
+                <p className="mt-1 text-sm text-[hsl(var(--muted-foreground))]">
+                  Once you delete your account, there is no going back. This
+                  action is permanent.
                 </p>
                 <button
                   onClick={() => setIsDeleteModalOpen(true)}
-                  className="mt-3 inline-flex items-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-500 transition"
+                  className="mt-4 inline-flex items-center gap-2 rounded-md bg-[hsl(var(--destructive))] px-3 py-2 text-sm font-semibold text-[hsl(var(--destructive-foreground))] shadow-sm hover:bg-[hsl(var(--destructive))]/90 transition"
                 >
-                  <TrashIcon className="h-5 w-5" />
-                  Delete My Account
+                  <TrashIcon className="h-5 w-5" /> Delete My Account
                 </button>
               </div>
             </div>
-          </div>
-
-          {user?.role === "admin" && (
-            <div className="lg:col-span-1 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-              <h2 className="text-xl font-semibold text-slate-800">
-                Admin Controls
-              </h2>
-              <p className="mt-2 text-sm text-slate-500">
-                Manage users and other system-wide settings.
-              </p>
-              <div className="mt-6">
-                <Link
-                  to="/users"
-                  className="inline-flex items-center gap-2 rounded-md bg-slate-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-600 transition w-full justify-center"
-                >
-                  <UserPlusIcon className="h-5 w-5" />
-                  Manage All Users
-                </Link>
+          </Tabs.Content>
+          {isAdmin && (
+            <Tabs.Content value="admin" className="pt-8">
+              <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-6 shadow-sm">
+                <h2 className="text-xl font-semibold text-[hsl(var(--foreground))]">
+                  Admin Controls
+                </h2>
+                <p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">
+                  Manage users and other system-wide settings.
+                </p>
+                <div className="mt-6 border-t border-[hsl(var(--border))] pt-6">
+                  <Link
+                    to="/users"
+                    className="inline-flex items-center gap-2 rounded-md bg-[hsl(var(--secondary))] px-4 py-3 text-base font-semibold text-[hsl(var(--secondary-foreground))] shadow-sm hover:bg-[hsl(var(--accent))] transition w-full justify-center"
+                  >
+                    <UserPlusIcon className="h-5 w-5" /> Manage All Users
+                  </Link>
+                </div>
               </div>
-              <div className="mt-4">
-                <Link
-                  to="/settings/create-user"
-                  className="inline-flex items-center gap-2 rounded-md bg-slate-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-600 transition w-full justify-center"
-                >
-                  <UserPlusIcon className="h-5 w-5" />
-                  Create New User
-                </Link>
-              </div>
-            </div>
+            </Tabs.Content>
           )}
-        </div>
+        </Tabs.Root>
       </div>
-
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleDeleteAccount}
         title="Delete Account"
       >
-        Are you sure you want to permanently delete your account? All of your
-        data will be removed. This action cannot be undone.
+        Are you sure you want to permanently delete your account? This action
+        cannot be undone.
       </ConfirmationModal>
     </>
   );

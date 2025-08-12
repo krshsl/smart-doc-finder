@@ -1,7 +1,7 @@
 import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
-  InformationCircleIcon
+  InformationCircleIcon,
 } from "@heroicons/react/24/outline";
 import * as Dialog from "@radix-ui/react-dialog";
 import React from "react";
@@ -19,7 +19,7 @@ export const Modal: React.FC<ModalProps> = ({
   onClose,
   title,
   type = "info",
-  children
+  children,
 }) => {
   const config = {
     success: {
@@ -27,29 +27,29 @@ export const Modal: React.FC<ModalProps> = ({
       iconColor: "text-green-600",
       bgColor: "bg-green-100",
       buttonClass:
-        "bg-green-600 text-white hover:bg-green-500 focus-visible:ring-green-500"
+        "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] hover:bg-[hsl(var(--primary))]/90 focus-visible:ring-[hsl(var(--ring))]",
     },
     error: {
       Icon: ExclamationTriangleIcon,
       iconColor: "text-red-600",
       bgColor: "bg-red-100",
       buttonClass:
-        "bg-red-600 text-white hover:bg-red-500 focus-visible:ring-red-500"
+        "bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))] hover:bg-[hsl(var(--destructive))]/90 focus-visible:ring-[hsl(var(--destructive))]",
     },
     info: {
       Icon: InformationCircleIcon,
-      iconColor: "text-brand-600",
-      bgColor: "bg-brand-100",
+      iconColor: "text-blue-600",
+      bgColor: "bg-blue-100",
       buttonClass:
-        "bg-brand-600 text-white hover:bg-brand-500 focus-visible:ring-brand-500"
-    }
+        "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] hover:bg-[hsl(var(--primary))]/90 focus-visible:ring-[hsl(var(--ring))]",
+    },
   }[type];
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={onClose}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/30 data-[state=open]:animate-in data-[state=closed]:animate-out" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 transform rounded-xl bg-white p-6 text-left align-middle shadow-xl transition-all data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95">
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 transform rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-6 text-left align-middle shadow-xl transition-all data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95">
           <div className="sm:flex sm:items-start">
             <div
               className={`mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full ${config.bgColor} sm:mx-0 sm:h-10 sm:w-10`}
@@ -61,12 +61,14 @@ export const Modal: React.FC<ModalProps> = ({
             </div>
             <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
               <Dialog.Title asChild>
-                <h3 className="text-lg font-semibold leading-6 text-slate-900">
+                <h3 className="text-lg font-semibold leading-6 text-[hsl(var(--foreground))]">
                   {title}
                 </h3>
               </Dialog.Title>
               <div className="mt-2">
-                <div className="text-sm text-slate-500">{children}</div>
+                <div className="text-sm text-[hsl(var(--muted-foreground))]">
+                  {children}
+                </div>
               </div>
             </div>
           </div>

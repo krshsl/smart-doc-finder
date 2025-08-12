@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Outlet } from "react-router-dom";
 
 import { useAuth } from "../auth/AuthContext";
@@ -7,12 +7,21 @@ import Sidebar from "../components/Sidebar";
 
 const DashboardLayout: React.FC = () => {
   const { user } = useAuth();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  if (!user) {
+    return null;
+  }
 
   return (
-    <div className="flex h-screen bg-slate-50 font-sans text-slate-800">
-      <Sidebar user={user!} />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Navbar />
+    <div className="flex h-screen w-full bg-[hsl(var(--background))]">
+      <Sidebar user={user} isOpen={isSidebarOpen} toggle={toggleSidebar} />
+      <div className="flex flex-1 flex-col overflow-hidden lg:ml-74">
+        <Navbar toggleSidebar={toggleSidebar} />
         <main className="flex-1 overflow-y-auto">
           <Outlet />
         </main>
