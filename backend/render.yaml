@@ -3,11 +3,7 @@ services:
     name: smart-doc-finder-backend
     env: python
     pythonVersion: 3.13.2
-    buildCommand: |
-      cd backend
-      python3 -m pip install --no-cache-dir --upgrade pip
-      python3 -m pip install --no-cache-dir -r requirements.txt
-      python3 scripts/download_model.py
+    buildCommand: python3 -m pip install --no-cache-dir --upgrade pip; python3 -m pip install --no-cache-dir -r requirements.txt; python3 scripts/download_model.py
     startCommand: |
       uvicorn src.main:app \
         --host 0.0.0.0 \

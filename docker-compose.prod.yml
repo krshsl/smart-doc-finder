@@ -37,6 +37,3 @@ services:
       - CORS_ORIGINS=http://localhost:4173
     command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --workers 1 --loop uvloop --http httptools --limit-concurrency 10 --backlog 10 --timeout-keep-alive 5
     mem_limit: 512M
-
-volumes:
-  node_modules:
