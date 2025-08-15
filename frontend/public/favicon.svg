@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="aiLuminous" x1="0%" y1="50%" x2="100%" y2="50%">
-      <stop offset="0%" stopColor="#2e8b57" />
-      <stop offset="33.34%" stopColor="#26a69a" />
-      <stop offset="66.67%" stopColor="#ffaf00" />
-      <stop offset="100%" stopColor="#ff8c00" />
-    </linearGradient>
+  <linearGradient id="aiLuminous" x1="0%" y1="50%" x2="100%" y2="50%">
+    <stop offset="0%" stop-color="#2e8b57"/>
+    <stop offset="33%" stop-color="#26a69a"/>
+    <stop offset="66%" stop-color="#ffaf00"/>
+    <stop offset="100%" stop-color="#ff8c00"/>
+  </linearGradient>
     <style>
       .stroke { stroke:#0f5132; stroke-width:12; stroke-linecap:round; stroke-linejoin:round; }
       .ink { fill:#0f5132; }
