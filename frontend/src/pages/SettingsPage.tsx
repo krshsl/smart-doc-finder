@@ -99,7 +99,7 @@ const SettingsPage: React.FC = () => {
                 </p>
                 <Link
                   to="/settings/edit-profile"
-                  className="mt-4 inline-flex items-center gap-2 rounded-md bg-[hsl(var(--primary))] px-3 py-2 text-sm font-semibold text-[hsl(var(--primary-foreground))] shadow-sm hover:bg-[hsl(var(--primary))]/90 transition"
+                  className="mt-4 inline-flex items-center gap-2 rounded-md bg-[hsl(var(--primary))] px-4 py-3 text-sm font-semibold text-[hsl(var(--primary-foreground))] shadow-sm hover:bg-[hsl(var(--primary))]/90 transition"
                 >
                   <PencilSquareIcon className="h-5 w-5" /> Edit Profile
                 </Link>
@@ -114,7 +114,7 @@ const SettingsPage: React.FC = () => {
                 </p>
                 <button
                   onClick={() => setIsDeleteModalOpen(true)}
-                  className="mt-4 inline-flex items-center gap-2 rounded-md bg-[hsl(var(--destructive))] px-3 py-2 text-sm font-semibold text-[hsl(var(--destructive-foreground))] shadow-sm hover:bg-[hsl(var(--destructive))]/90 transition"
+                  className="mt-4 inline-flex items-center gap-2 rounded-md bg-[hsl(var(--destructive))] px-4 py-3 text-sm font-semibold text-[hsl(var(--destructive-foreground))] shadow-sm hover:bg-[hsl(var(--destructive))]/90 transition"
                 >
                   <TrashIcon className="h-5 w-5" /> Delete My Account
                 </button>
