@@ -45,7 +45,7 @@ services:
       - ../backend/dev.env
     environment:
       - ENV=dev
-      - CORS_ORIGINS=http://localhost:4173
+      - CORS_ORIGINS=http://localhost:5173
     deploy:
       resources:
         limits:
