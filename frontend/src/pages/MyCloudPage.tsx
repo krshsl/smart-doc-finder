@@ -394,7 +394,7 @@ const MyCloudPage: React.FC = () => {
 
       <div className="border-b border-[hsl(var(--border))] pb-4">
         <Breadcrumbs crumbs={breadcrumbs} />
-        <div className="flex items-center gap-2 mt-2">
+        <div className="flex items-center gap-2 mt-4">
           <h1 className="text-3xl font-bold tracking-tight text-[hsl(var(--foreground))]">
             {folderData?.name || "..."}
           </h1>
