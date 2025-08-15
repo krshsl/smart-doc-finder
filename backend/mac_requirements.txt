@@ -84,8 +84,7 @@ starlette==0.47.2
 sympy==1.14.0
 threadpoolctl==3.6.0
 tokenizers==0.21.4
--f https://download.pytorch.org/whl/torch/
-torch==2.8.0+cpu
+torch==2.8.0
 tqdm==4.67.1
 traits==7.0.2
 transformers==4.55.0

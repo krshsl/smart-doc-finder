@@ -3,8 +3,8 @@ from os import getenv
 from typing import List
 
 from bson import ObjectId
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
-from pydantic import BaseModel, EmailStr, Field, ValidationError, validator
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 import src.utils.auth as auth
 from src.models import User
@@ -20,16 +20,18 @@ class UserCreateRequest(BaseModel):
     password: str
     role: str = Field(default="user", pattern="^(admin|user|guest)$")
 
-    @validator("username")
-    def validate_username(cls, v):
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: str) -> str:
         if len(v) < 4:
             raise ValueError("Username should have at least 4 characters")
         if " " in v:
             raise ValueError("Username cannot contain spaces")
         return v
 
-    @validator("password")
-    def password_min_length(cls, v):
+    @field_validator("password")
+    @classmethod
+    def password_min_length(cls, v: str) -> str:
         if len(v) < 8:
             raise ValueError("Password should have at least 8 characters")
         return v
@@ -40,16 +42,18 @@ class UserUpdateRequest(BaseModel):
     username: str | None = None
     password: str | None = None
 
-    @validator("username")
-    def validate_username(cls, v):
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: str | None) -> str | None:
         if v and len(v) < 4:
             raise ValueError("Username should have at least 4 characters")
         if v and " " in v:
             raise ValueError("Username cannot contain spaces")
         return v
 
-    @validator("password")
-    def password_min_length(cls, v):
+    @field_validator("password")
+    @classmethod
+    def password_min_length(cls, v: str | None) -> str | None:
         if v and len(v) < 8:
             raise ValueError("Password should have at least 8 characters")
         return v
@@ -139,7 +143,6 @@ async def get_users(data: UsersRequest, token=Depends(auth.verify_access_token))
 async def update_user(
     user_id: str,
     data: UserUpdateRequest,
-    background_tasks: BackgroundTasks,
     token=Depends(auth.verify_access_token),
 ):
     token_data, current_user = token
@@ -162,7 +165,7 @@ async def update_user(
     await user.save()
 
     if user.id == current_user.id:
-        background_tasks.add_task(token_data.delete)
+        await token_data.delete()
 
         token_str = await auth._create_access_token(user)
         return {"access_token": token_str, "token_type": "bearer"}

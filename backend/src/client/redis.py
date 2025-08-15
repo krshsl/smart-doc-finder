@@ -1,18 +1,39 @@
 import logging
+from os import getenv
 from types import SimpleNamespace
+from typing import Optional
 
-from redis.asyncio import Redis
+from redis.asyncio import ConnectionPool, Redis
 from redis.exceptions import ConnectionError, ResponseError
 
 from src.rag import DOC_PREFIX, EMB_DIM, INDEX_NAME
 
-redis_client: Redis = None
+redis_client: Optional[Redis] = None
 
 
-async def init_redis_index():
+async def drop_redis_index(logger):
     global redis_client
-    logger = logging.getLogger("uvicorn")
 
+    if not redis_client:
+        logger.error("Redis client not initialized.")
+        return
+
+    try:
+        await redis_client.execute_command("FT.DROPINDEX", INDEX_NAME, "DD")
+        logger.info(f"Redis Search index '{INDEX_NAME}' dropped successfully.")
+    except ResponseError as e:
+        if "Unknown Index name" in str(e):
+            logger.info(f"Redis Search index '{INDEX_NAME}' does not exist.")
+        else:
+            logger.error(f"Failed to drop Redis Search index: {e}")
+            raise
+
+
+async def init_redis_index(env: str):
+    global redis_client
+
+    logger = logging.getLogger("uvicorn")
+    # await drop_redis_index(logger)
     command_args = [
         "FT.CREATE",
         INDEX_NAME,
@@ -24,9 +45,7 @@ async def init_redis_index():
         "SCHEMA",
         "filename",
         "TAG",
-        "snippet",
-        "TEXT",
-        "embedding",
+        "embedding" + "_" + env,
         "VECTOR",
         "HNSW",
         "6",
@@ -39,6 +58,9 @@ async def init_redis_index():
     ]
 
     try:
+        if not redis_client:
+            raise Exception
+
         await redis_client.execute_command(*command_args)
         logger.info(f"Redis Search index '{INDEX_NAME}' created successfully.")
     except ResponseError as e:
@@ -52,13 +74,20 @@ async def init_redis_index():
 async def init_redis(env: SimpleNamespace):
     global redis_client
     try:
-        redis_client = Redis(
+        redis_pool = ConnectionPool(
             host=env.REDIS_HOST,
             port=env.REDIS_PORT,
             username=env.REDIS_USERNAME,
             password=env.REDIS_PASSWORD,
+            max_connections=int(getenv("MAX_CONCURRENT_REQUESTS")),
+            retry_on_timeout=True,
+            socket_connect_timeout=1,
+            socket_timeout=1,
+            socket_keepalive=True,
+            health_check_interval=60,
             decode_responses=False,
         )
+        redis_client = Redis(connection_pool=redis_pool)
         await redis_client.ping()
     except ConnectionError as e:
         logger = logging.getLogger("uvicorn")
@@ -67,5 +96,16 @@ async def init_redis(env: SimpleNamespace):
         exit(1)
 
 
-def get_redis_client() -> Redis:
+async def shutdown_redis():
+    global redis_client
+
+    if redis_client:
+        await redis_client.close()
+        await redis_client.connection_pool.disconnect()
+
+        logger = logging.getLogger("uvicorn")
+        logger.error("Redis stopped successfully")
+
+
+def get_redis_client() -> Optional[Redis]:
     return redis_client

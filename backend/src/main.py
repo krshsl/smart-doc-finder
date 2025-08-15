@@ -1,5 +1,6 @@
 import logging
 import tracemalloc
+from asyncio import create_task
 from contextlib import asynccontextmanager
 from os import getenv
 from sys import exit
@@ -7,16 +8,26 @@ from types import SimpleNamespace
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 
 from .api import routes
-from .client import init_db, init_redis, init_redis_index, init_search_index
+from .client import (
+    init_db,
+    init_redis,
+    init_redis_index,
+    init_search_index,
+    shutdown_db,
+    shutdown_redis,
+)
+from .middleware import load_middlewares
+from .rag import init_torch
 from .utils.constants import REQUIRED_APP_VARS
 from .utils.populate_db import populate_db
 
 logger = logging.getLogger("uvicorn")
 
 ENV = getenv("ENV", "prod").lower()
-debug_mode = ENV == "dev"
+debug_mode = False  # "dev" in ENV
 if debug_mode:
     tracemalloc.start()
     logger.info("tracemalloc enabled for development mode.")
@@ -45,16 +56,19 @@ async def lifespan(app: FastAPI):
     await init_redis(app_vars)
     logger.info("Redis initialized successfully.")
 
-    await init_redis_index()
+    await init_redis_index(ENV)
     logger.info("Redis Search index initialized successfully.")
 
     await init_search_index(app_vars)
     logger.info("Atlas Search index initialized successfully.")
 
-    await populate_db(app_vars)
-    logger.info("Populated db successfully.")
+    init_torch()
+    create_task(populate_db(app_vars))
 
     yield
+
+    await shutdown_db()
+    await shutdown_redis()
     logger.info("Application shutting down.")
 
 
@@ -70,3 +84,6 @@ app.add_middleware(
 )
 
 app.include_router(routes)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+for middleware in load_middlewares():
+    app.middleware("http")(middleware)
