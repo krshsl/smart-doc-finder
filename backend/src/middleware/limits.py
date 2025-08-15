@@ -1,6 +1,5 @@
 from os import getenv
 
-import psutil
 from fastapi import HTTPException
 
 active_requests = 0
@@ -38,13 +37,66 @@ def track_usage():
     tracemalloc.stop()
 
 
-async def memory_circuit_breaker(request, call_next):
-    memory_mb = psutil.Process().memory_info().rss / 1024 / 1024
-    if memory_mb > MAX_MEMORY_MB:
-        raise HTTPException(status_code=503, detail="High memory usage")
-    return await call_next(request)
+# async def memory_circuit_breaker(request, call_next):
+#     import gc
+#     from asyncio import sleep
+
+#     max_wait_time = 15
+#     check_interval = 0.5
+#     waited_time = 0
+#     cleanup_attempted = False
+
+#     while waited_time < max_wait_time:
+#         memory_mb = psutil.Process().memory_info().rss / 1024 / 1024
+
+#         if memory_mb <= MAX_MEMORY_MB:
+#             return await call_next(request)
+
+#         if not cleanup_attempted and waited_time > 2:
+#             gc.collect()
+#             gc.collect()
+#             cleanup_attempted = True
+
+#         elif waited_time > 5 and hasattr(request.app.state, "encoder"):
+#             try:
+#                 encoder = request.app.state.encoder
+#                 if hasattr(encoder, "_emergency_cleanup"):
+#                     encoder._emergency_cleanup()
+#             except:
+#                 pass
+
+#         if debug_mode and int(waited_time) % 2 == 0:
+#             import logging
+
+#             logging.getLogger("uvicorn").warning(
+#                 f"Memory: {memory_mb:.1f}MB (limit: {MAX_MEMORY_MB}MB), "
+#                 f"waiting {waited_time:.1f}s..."
+#             )
+
+#         await sleep(check_interval)
+#         waited_time += check_interval
+
+#     try:
+#         gc.collect()
+#         if hasattr(request.app.state, "encoder"):
+#             encoder = request.app.state.encoder
+#             if hasattr(encoder, "unload_model"):
+#                 encoder.unload_model()
+#     except:
+#         pass
+
+#     final_memory_mb = psutil.Process().memory_info().rss / 1024 / 1024
+#     if final_memory_mb <= MAX_MEMORY_MB:
+#         return await call_next(request)
+
+#     raise HTTPException(
+#         status_code=503,
+#         detail=f"Memory critical ({final_memory_mb:.1f}MB), please retry in a moment",
+#     )
 
 
-memory_circuit_breaker._is_middleware = True
+# memory_circuit_breaker._is_middleware = True
 
-middlewares = [concurrency_limiter, memory_circuit_breaker]
+# middlewares = [concurrency_limiter, memory_circuit_breaker]
+
+middlewares = [concurrency_limiter]
