@@ -5,7 +5,8 @@ const CloudLogo: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <defs>
       <linearGradient id="aiLuminous" x1="0%" y1="50%" x2="100%" y2="50%">
         <stop offset="0%" stopColor="#2e8b57" />
-        <stop offset="70%" stopColor="#26a69a" />
+        <stop offset="33.34%" stopColor="#26a69a" />
+        <stop offset="66.67%" stopColor="#ffaf00" />
         <stop offset="100%" stopColor="#ff8c00" />
       </linearGradient>
       <style>
@@ -28,10 +29,10 @@ const CloudLogo: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
         d="M201 248 h110 l28 28 v128 a14 14 0 0 1 -14 14 h-124 a14 14 0 0 1 -14 -14 v-142 a14 14 0 0 1 14 -14 Z"
       />
       <path className="stroke paper" d="M311 248 L339 276 L311 276 Z" />
+      <path className="stroke" d="M216 280 H270" />
       <path className="stroke" d="M216 304 H292" />
-      <path className="stroke" d="M216 280 H290" />
-      <path className="stroke" d="M216 328 H286" />
-      <path className="stroke" d="M216 352 H280" />
+      <path className="stroke" d="M216 328 H280" />
+      <path className="stroke" d="M216 352 H266" />
       <circle className="stroke paper" cx="360" cy="350" r="56" />
       <g transform="translate(360, 350) rotate(45)">
         <path
