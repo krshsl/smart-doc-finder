@@ -8,11 +8,11 @@ interface ThemeProviderState {
 }
 
 const ThemeProviderContext = createContext<ThemeProviderState | undefined>(
-  undefined,
+  undefined
 );
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
+  children
 }) => {
   const [theme, setTheme] = useState<Theme>(() => {
     try {

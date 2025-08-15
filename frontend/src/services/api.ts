@@ -23,7 +23,6 @@ export const setupInterceptors = () => {
     const allowGuest = (config as any).allowGuest || false;
 
     if (userRole === "guest" && !allowGuest) {
-      console.warn("Guest action blocked by API layer.");
       return Promise.reject(
         new AxiosError(
           "Guests are not allowed to perform this action.",

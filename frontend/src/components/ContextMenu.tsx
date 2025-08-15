@@ -42,7 +42,7 @@ interface ContextMenuProps {
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({
   items,
-  children,
+  children
 }) => {
   return (
     <ContextMenuPrimitive.Root>
@@ -55,7 +55,8 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
           <DropdownMenuPrimitive.Trigger asChild>
             <button
               aria-label="Open menu"
-              className="absolute top-2 right-2 z-20 rounded-md p-1.5 text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))]"
+              onPointerDown={(e) => e.stopPropagation()}
+              className="absolute top-2 right-2 rounded-md p-1.5 text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))]"
             >
               <Bars3Icon className="h-5 w-5" />
             </button>

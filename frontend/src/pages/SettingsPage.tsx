@@ -1,15 +1,16 @@
 import {
   UserPlusIcon,
   PencilSquareIcon,
-  TrashIcon,
+  TrashIcon
 } from "@heroicons/react/24/outline";
+import * as Tabs from "@radix-ui/react-tabs";
 import React, { useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import * as Tabs from "@radix-ui/react-tabs";
 
 import { useAuth } from "../auth/AuthContext";
 import { ConfirmationModal } from "../components/ConfirmationModal";
 import { LoadingOverlay } from "../components/LoadingOverlay";
+import { Modal } from "../components/Modal";
 import api from "../services/api";
 
 const SettingsPage: React.FC = () => {
@@ -17,6 +18,10 @@ const SettingsPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [notifcationModal, setNotifcationModal] = useState<{
+    type: "info" | "success" | "error";
+    text: string;
+  } | null>(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
   const isNestedRoute = location.pathname.startsWith("/settings/");
 
@@ -24,14 +29,26 @@ const SettingsPage: React.FC = () => {
     return <Outlet />;
   }
 
-  const handleDeleteAccount = async () => {
+  const handleDeleteAccount = async() => {
     setIsActionLoading(true);
     try {
       await api.delete(`/user/${user!.id}`);
       await logout(true);
+      setNotifcationModal({
+        type: "success",
+        text: "Account removed successfully"
+      });
       navigate("/login");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to delete account:", error);
+      const message =
+        error.response?.data?.detail ||
+        error.message ||
+        "An unexpected error occurred.";
+      setNotifcationModal({
+        type: "error",
+        text: message
+      });
     } finally {
       setIsActionLoading(false);
       setIsDeleteModalOpen(false);
@@ -135,6 +152,13 @@ const SettingsPage: React.FC = () => {
         Are you sure you want to permanently delete your account? This action
         cannot be undone.
       </ConfirmationModal>
+      <Modal
+        isOpen={!!notifcationModal}
+        onClose={() => setNotifcationModal(null)}
+        type={notifcationModal?.type}
+      >
+        {notifcationModal?.text}
+      </Modal>
     </>
   );
 };

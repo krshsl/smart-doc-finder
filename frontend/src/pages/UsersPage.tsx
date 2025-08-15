@@ -2,7 +2,7 @@ import {
   PencilIcon,
   TrashIcon,
   UserPlusIcon,
-  MagnifyingGlassIcon,
+  MagnifyingGlassIcon
 } from "@heroicons/react/24/outline";
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
@@ -28,7 +28,7 @@ const UsersPage: React.FC = () => {
   }>({ isOpen: false, user: null });
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
 
-  const fetchUsers = useCallback(async () => {
+  const fetchUsers = useCallback(async() => {
     setIsLoading(true);
     try {
       const data = await userService.getUsers(page, search);
@@ -45,7 +45,7 @@ const UsersPage: React.FC = () => {
     fetchUsers();
   }, [fetchUsers]);
 
-  const handleDelete = async () => {
+  const handleDelete = async() => {
     if (!deleteModal.user) return;
     setIsDeleting(true);
     try {
@@ -59,7 +59,7 @@ const UsersPage: React.FC = () => {
     }
   };
 
-  const confirmBulkDelete = async () => {
+  const confirmBulkDelete = async() => {
     if (selectedUsers.length === 0) return;
     setIsBulkDeleting(true);
     try {
@@ -132,7 +132,7 @@ const UsersPage: React.FC = () => {
                     className="h-4 w-4 rounded border-[hsl(var(--input))] bg-[hsl(var(--card))] text-[hsl(var(--primary))]"
                     onChange={(e) =>
                       setSelectedUsers(
-                        e.target.checked ? users.map((u) => u.id) : [],
+                        e.target.checked ? users.map((u) => u.id) : []
                       )
                     }
                   />
@@ -169,7 +169,7 @@ const UsersPage: React.FC = () => {
                         setSelectedUsers(
                           e.target.checked
                             ? [...selectedUsers, user.id]
-                            : selectedUsers.filter((id) => id !== user.id),
+                            : selectedUsers.filter((id) => id !== user.id)
                         )
                       }
                     />

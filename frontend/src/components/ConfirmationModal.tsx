@@ -15,7 +15,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   onClose,
   onConfirm,
   title,
-  children,
+  children
 }) => {
   return (
     <Dialog.Root open={isOpen} onOpenChange={onClose}>

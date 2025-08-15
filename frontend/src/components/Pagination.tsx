@@ -9,7 +9,7 @@ interface PaginationProps {
 export const Pagination: React.FC<PaginationProps> = ({
   currentPage,
   totalPages,
-  onPageChange,
+  onPageChange
 }) => {
   if (totalPages <= 1) return null;
 
@@ -79,7 +79,7 @@ export const Pagination: React.FC<PaginationProps> = ({
               >
                 {page}
               </button>
-            ),
+            )
           )}
         </div>
 

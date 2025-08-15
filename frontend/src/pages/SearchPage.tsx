@@ -1,14 +1,14 @@
 import {
   ArrowDownTrayIcon,
   ArrowTopRightOnSquareIcon,
-  FolderArrowDownIcon,
+  FolderOpenIcon
 } from "@heroicons/react/24/outline";
 import React, { useEffect, useState } from "react";
 import {
   useSearchParams,
   useNavigate,
   useLocation,
-  Link,
+  Link
 } from "react-router-dom";
 
 import { ContextMenu } from "../components/ContextMenu";
@@ -41,7 +41,7 @@ const SearchPage: React.FC = () => {
 
   useEffect(() => {
     if (query) {
-      const fetchResults = async () => {
+      const fetchResults = async() => {
         setIsLoading(true);
         try {
           const data = await searchService.search(query, isAiSearch);
@@ -60,7 +60,7 @@ const SearchPage: React.FC = () => {
     }
   }, [query, isAiSearch]);
 
-  const handleOpenFile = async (item: FileItem) => {
+  const handleOpenFile = async(item: FileItem) => {
     setIsActionLoading(true);
     try {
       const blob = await cloudService.getFileBlob(item.id);
@@ -68,7 +68,7 @@ const SearchPage: React.FC = () => {
       setFilePreview({
         url: fileURL,
         type: item.file_type,
-        name: item.file_name,
+        name: item.file_name
       });
     } catch (error) {
       console.error("Failed to fetch file for preview:", error);
@@ -89,9 +89,9 @@ const SearchPage: React.FC = () => {
     }
   };
 
-  const handleDownload = async (
+  const handleDownload = async(
     item: FileItem | FolderItem,
-    type: "file" | "folder",
+    type: "file" | "folder"
   ) => {
     setIsActionLoading(true);
     try {
@@ -125,7 +125,7 @@ const SearchPage: React.FC = () => {
         e.preventDefault();
         handleOpenFolder(item);
       },
-      icon: <ArrowTopRightOnSquareIcon className="h-5 w-5" />,
+      icon: <ArrowTopRightOnSquareIcon className="h-5 w-5" />
     },
     {
       label: "Download",
@@ -133,8 +133,8 @@ const SearchPage: React.FC = () => {
         e.preventDefault();
         handleDownload(item, "folder");
       },
-      icon: <ArrowDownTrayIcon className="h-5 w-5" />,
-    },
+      icon: <ArrowDownTrayIcon className="h-5 w-5" />
+    }
   ];
 
   const fileMenuItems = (item: FileItem) => [
@@ -144,7 +144,7 @@ const SearchPage: React.FC = () => {
         e.preventDefault();
         handleOpenFile(item);
       },
-      icon: <ArrowTopRightOnSquareIcon className="h-5 w-5" />,
+      icon: <ArrowTopRightOnSquareIcon className="h-5 w-5" />
     },
     {
       label: "Download",
@@ -152,7 +152,7 @@ const SearchPage: React.FC = () => {
         e.preventDefault();
         handleDownload(item, "file");
       },
-      icon: <ArrowDownTrayIcon className="h-5 w-5" />,
+      icon: <ArrowDownTrayIcon className="h-5 w-5" />
     },
     {
       label: "Go to folder",
@@ -160,8 +160,8 @@ const SearchPage: React.FC = () => {
         e.preventDefault();
         handleGoToFolder(item);
       },
-      icon: <FolderArrowDownIcon className="h-5 w-5" />,
-    },
+      icon: <FolderOpenIcon className="h-5 w-5" />
+    }
   ];
 
   return (
@@ -174,13 +174,13 @@ const SearchPage: React.FC = () => {
         {isLoading
           ? "Searching..."
           : `Found ${
-              results.folders.length + results.files.length
-            } results for `}
+            results.folders.length + results.files.length
+          } results for `}
         <span className="font-semibold text-[hsl(var(--foreground))]">
           "{query}"
         </span>
         {isAiSearch && (
-          <span className="ml-2 inline-block bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent font-bold">
+          <span className="ml-2 inline-block bg-ai-luminous bg-clip-text text-transparent font-bold">
             (AI-Powered)
           </span>
         )}
