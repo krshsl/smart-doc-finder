@@ -1,23 +1,17 @@
-import numpy as np
-from async_lru import alru_cache
 from bson import ObjectId
 
 from src.client import get_redis_client
+from src.middleware.limits import ENV
 from src.models import File, User
 
-from . import INDEX_NAME, TOP_K, get_model
+from . import INDEX_NAME, TOP_K
+from .manager import get_search_semaphore
 
 
-@alru_cache(maxsize=128)
-async def perform_redis_search(query_text: str):
+async def perform_redis_search(embedding: bytes):
     r_client = get_redis_client()
-    model = get_model()
-    q_emb = (
-        model.encode(query_text, normalize_embeddings=True).astype(np.float32).tobytes()
-    )
 
-    query_string = f"*=>[KNN {TOP_K} @embedding $vec AS distance]"
-
+    query_string = f"*=>[KNN {TOP_K} @embedding_{ENV} $vec AS distance]"
     command_args = [
         "FT.SEARCH",
         INDEX_NAME,
@@ -25,7 +19,7 @@ async def perform_redis_search(query_text: str):
         "PARAMS",
         "2",
         "vec",
-        q_emb,
+        embedding,
         "DIALECT",
         "2",
         "RETURN",
@@ -33,23 +27,43 @@ async def perform_redis_search(query_text: str):
         "distance",
     ]
 
-    raw_results = await r_client.execute_command(*command_args)
+    async with get_search_semaphore():
+        raw_results = await r_client.execute_command(*command_args)
 
     results = []
+    keys_to_touch = []
     i = 1
     while i < len(raw_results):
-        doc_id = raw_results[i].decode("utf-8")
-        distance = float(raw_results[i + 1][1])
+        doc_id = raw_results[i]
+        keys_to_touch.append(doc_id)
 
-        results.append({"hash": doc_id.split(":")[1], "score": 1 / (1 + distance)})
+        distance = float(raw_results[i + 1][1])
+        results.append(
+            {
+                "hash": doc_id.decode("utf-8").split(":")[1],
+                "score": 1 / (1 + distance),
+            }
+        )
         i += 2
+
+    # After getting the results, touch the keys to update the LRU status
+    if keys_to_touch:
+        async with get_search_semaphore():
+            try:
+                pipe = r_client.pipeline()
+                for key in keys_to_touch:
+                    pipe.touch(key)
+                await pipe.execute()
+            except Exception as e:
+                from src import logger
+
+                logger.warning(f"Failed to TOUCH Redis keys: {e}")
 
     return results
 
 
-async def perform_mongodb_search(query_text: str, user: User):
-    model = get_model()
-    query_vector = [float(x) for x in model.encode(query_text)]
+async def perform_mongodb_search(embeddings, user: User):
+    query_vector = [float(x) for x in embeddings]
 
     pipeline = [
         {

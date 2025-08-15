@@ -23,7 +23,11 @@ services:
       - VITE_API_BASE_URL=/api
       - VITE_NODE_ENV=production
     command: npm run preview -- --host
-    mem_limit: 512M
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
 
   backend:
     build:
@@ -35,5 +39,8 @@ services:
     environment:
       - ENV=prod
       - CORS_ORIGINS=http://localhost:4173
-    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --workers 1 --loop uvloop --http httptools --limit-concurrency 10 --backlog 10 --timeout-keep-alive 5
-    mem_limit: 512M
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M

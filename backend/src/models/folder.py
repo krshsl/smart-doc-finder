@@ -1,4 +1,3 @@
-from asyncio import gather
 from typing import List, Optional
 
 from beanie import Delete, Link, before_event
@@ -17,7 +16,7 @@ class Folder(BaseDocument):
     shared_with: List[Link[User]] = []
     folder_size: int = META_DATA_SIZE
 
-    async def calculate_total_size(self) -> int:
+    async def calculate_total_size(self):
         from .file import File
 
         total_size = self.folder_size
@@ -42,12 +41,14 @@ class Folder(BaseDocument):
         files = await File.find(
             File.folder == DBRef(Folder.__name__, self.id)
         ).to_list()
-        await gather(*(f.delete() for f in files))
+        for file in files:
+            await file.delete()
 
         subfolders = await Folder.find(
             Folder.parent == DBRef(Folder.__name__, self.id)
         ).to_list()
-        await gather(*(sf.delete() for sf in subfolders))
+        for folder in subfolders:
+            await folder.delete()
 
     async def _to_dict(
         self, include_refs=False, include_parents=False, include_children=False
@@ -64,23 +65,21 @@ class Folder(BaseDocument):
             files = await File.find(
                 File.folder == DBRef(Folder.__name__, self.id)
             ).to_list()
+            folder["files"] = []
+            for file in files:
+                folder["files"].append(file._to_dict())
+
             sub_folders = await Folder.find(
                 Folder.parent == DBRef(Folder.__name__, self.id)
             ).to_list()
-            files_list = await gather(*(f._to_dict() for f in files))
-            sub_folders_list = await gather(
-                *(
-                    s._to_dict(
-                        include_refs=include_children, include_children=include_children
-                    )
-                    for s in sub_folders
+            folder["sub_folders"] = []
+            for sub_folder in sub_folders:
+                folder["sub_folders"] = sub_folder._to_dict(
+                    include_refs=include_children, include_children=include_children
                 )
-            )
-            folder["files"] = files_list
-            folder["sub_folders"] = sub_folders_list
 
         if self.parent:
-            parent: Folder = await self.parent.fetch()
+            parent = await self.parent.fetch()
             folder["parent"] = await parent._to_dict(include_parents=include_parents)
 
         return folder

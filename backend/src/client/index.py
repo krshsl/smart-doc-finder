@@ -6,7 +6,7 @@ from types import SimpleNamespace
 from httpx import AsyncClient, DigestAuth, RequestError
 
 from src.models import File
-from src.rag import INDEX_NAME
+from src.rag import EMB_DIM, INDEX_NAME
 
 
 async def init_search_index(env: SimpleNamespace):
@@ -21,7 +21,7 @@ async def init_search_index(env: SimpleNamespace):
                     "owner": {"type": "document", "dynamic": True},
                     "embedding": {
                         "type": "knnVector",
-                        "dimensions": 384,
+                        "dimensions": EMB_DIM,
                         "similarity": "euclidean",
                     },
                 },

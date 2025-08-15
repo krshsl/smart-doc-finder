@@ -231,3 +231,9 @@ __marimo__/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# lsp
+pyrightconfig.json
+
+# llm
+backend/models

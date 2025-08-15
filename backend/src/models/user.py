@@ -1,5 +1,3 @@
-from asyncio import gather
-
 from beanie import Delete, Insert, after_event, before_event
 from bson.dbref import DBRef
 from pydantic import EmailStr, Field
@@ -28,7 +26,8 @@ class User(BaseDocument):
 
     @before_event(Delete)
     async def _delete_ref_models(self):
-        await gather(self._delete_default_folder(), self._delete_tokens())
+        await self._delete_tokens()
+        await self._delete_default_folder()
 
     async def _delete_tokens(self):
         from .token import JWTToken
