@@ -19,6 +19,9 @@ services:
       - /home/ec2-user/prod.env
     environment:
       - ENV=prod
+    volumes:
+      - ../backend/src:/app/src:ro
+      - ../backend/scripts:/app/scripts:ro
     deploy:
       resources:
         limits:

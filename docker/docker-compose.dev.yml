@@ -22,7 +22,7 @@ services:
     working_dir: /app
     volumes:
       - ../frontend:/app
-      - ../frontend/node_modules:/app/node_modules
+      - node_modules:/app/node_modules
     environment:
       - VITE_API_BASE_URL=/api
       - VITE_NODE_ENV=development

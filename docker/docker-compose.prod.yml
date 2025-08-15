@@ -39,6 +39,9 @@ services:
     environment:
       - ENV=prod
       - CORS_ORIGINS=http://localhost:4173
+    volumes:
+      - ../backend/src:/app/src:ro
+      - ../backend/scripts:/app/scripts:ro
     deploy:
       resources:
         limits:
