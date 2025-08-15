@@ -1,7 +1,7 @@
 import React from "react";
 
 export const LoadingOverlay: React.FC<{ isLoading: boolean }> = ({
-  isLoading,
+  isLoading
 }) => {
   if (!isLoading) return null;
   return (

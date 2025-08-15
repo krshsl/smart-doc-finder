@@ -13,7 +13,7 @@ interface FileViewerModalProps {
 export const FileViewerModal: React.FC<FileViewerModalProps> = ({
   isOpen,
   onClose,
-  file,
+  file
 }) => {
   const fileType = file?.name.split(".").pop()?.toLowerCase();
 

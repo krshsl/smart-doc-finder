@@ -10,7 +10,7 @@ const Navbar: React.FC<{ toggleSidebar: () => void }> = ({ toggleSidebar }) => {
   const [searchParams] = useSearchParams();
   const [query, setQuery] = useState<string>(searchParams.get("q") || "");
   const [aiSearch, setAiSearch] = useState<boolean>(
-    location.pathname.includes("/search/ai"),
+    location.pathname.includes("/search/ai")
   );
 
   useEffect(() => {
@@ -53,38 +53,41 @@ const Navbar: React.FC<{ toggleSidebar: () => void }> = ({ toggleSidebar }) => {
           <div className="flex items-center gap-2 pl-3 border-l border-[hsl(var(--border))]">
             {aiSearch && (
               <div className="relative">
-                <span className="absolute -top-3 [rotate:4deg] -left-0.5 text-blue-500 text-xs animate-sparkle">
+                <span className="absolute -top-4 [rotate:4deg] -left-0.5 text-lime-500 text-base animate-sparkle">
                   ✦
                 </span>
-                <span className="absolute bottom-[0.15rem] [rotate:-15deg] -right-[0.95rem] text-pink-500 text-[10px] animate-sparkle [animation-delay:0.75s]">
+                <span className="absolute bottom-[0.15rem] [rotate:-15deg] -right-[0.95rem] text-orange-500 text-xs animate-sparkle [animation-delay:0.75s]">
                   ✦
                 </span>
               </div>
             )}
             <label
               htmlFor="ai-search"
-              className="text-xs font-medium whitespace-nowrap pr-1 text-[hsl(var(--muted-foreground))]"
+              className={`text-xs font-medium whitespace-nowrap pr-1 transition-colors ${
+                aiSearch
+                  ? "bg-ai-luminous bg-clip-text text-transparent"
+                  : "text-[hsl(var(--muted-foreground))]"
+              }`}
             >
               AI
             </label>
             <Switch.Root
-              className="relative flex items-center w-[40px] h-[24px] rounded-full border transition-colors duration-200 data-[state=checked]:border-transparent data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-blue-500 data-[state=checked]:to-purple-500 data-[state=unchecked]:bg-[hsl(var(--input))]"
+              className="relative flex items-center w-[40px] h-[24px] rounded-full border transition-colors duration-200 data-[state=checked]:border-0 data-[state=unchecked]:bg-[hsl(var(--input))] data-[state=checked]:bg-ai-luminous opacity-90"
               id="ai-search"
               checked={aiSearch}
               onCheckedChange={setAiSearch}
             >
               <Switch.Thumb
                 className="
-                pointer-events-none block -ml-[0.075rem] h-[18px] w-[18px] transform rounded-full
-                shadow-lg ring-1 transition-all duration-200
-                data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-1
-                shadow-black/20 ring-black/5
-                dark:shadow-black/40 dark:ring-white/10
-
-                data-[state=unchecked]:bg-[hsl(var(--foreground))]
-                data-[state=checked]:bg-white
-                dark:bg-[hsl(var(--foreground))]
-              "
+                  pointer-events-none block -ml-[0.075rem] h-[18px] w-[18px] transform rounded-full
+                  shadow-lg ring-1 transition-all duration-200
+                  data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-1
+                  shadow-black/20 ring-black/5
+                  dark:shadow-black/40 dark:ring-white/10
+                  data-[state=unchecked]:bg-[hsl(var(--foreground))]
+                  data-[state=checked]:bg-white
+                  dark:bg-[hsl(var(--foreground))]
+                "
               />
             </Switch.Root>
           </div>

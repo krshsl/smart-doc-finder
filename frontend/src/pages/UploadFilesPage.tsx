@@ -17,7 +17,7 @@ const UploadFilesPage: React.FC = () => {
     message: string;
   } | null>(null);
 
-  const handleUpload = async (files: File[], paths: string[]) => {
+  const handleUpload = async(files: File[], paths: string[]) => {
     if (files.length === 0) return;
     setIsLoading(true);
     setModalState(null);
@@ -31,7 +31,7 @@ const UploadFilesPage: React.FC = () => {
 
       if (successful_uploads?.length > 0) {
         messageLines.push(
-          `${successful_uploads.length} item(s) uploaded successfully.`,
+          `${successful_uploads.length} item(s) uploaded successfully.`
         );
       }
 
@@ -42,14 +42,14 @@ const UploadFilesPage: React.FC = () => {
           .map((f: any) => f.file_name)
           .join(", ");
         messageLines.push(
-          `\n${failed_uploads.length} item(s) failed to upload: ${failedNames}.`,
+          `\n${failed_uploads.length} item(s) failed to upload: ${failedNames}.`
         );
       }
 
       setModalState({
         isOpen: true,
         type: modalType,
-        message: messageLines.join(" ") || "No files were processed.",
+        message: messageLines.join(" ") || "No files were processed."
       });
     } catch (error: any) {
       const message =
@@ -61,13 +61,13 @@ const UploadFilesPage: React.FC = () => {
   };
 
   const onDrop = useCallback(
-    async (acceptedFiles: File[], fileRejections: any[], event: any) => {
+    async(acceptedFiles: File[], fileRejections: any[], event: any) => {
       let allFiles: File[] = [];
       let allPaths: string[] = [];
 
       if (event.dataTransfer && event.dataTransfer.items) {
         const items = Array.from(
-          event.dataTransfer.items as DataTransferItemList,
+          event.dataTransfer.items as DataTransferItemList
         );
         for (const item of items) {
           const entry = item.webkitGetAsEntry();
@@ -82,7 +82,7 @@ const UploadFilesPage: React.FC = () => {
       if (allFiles.length === 0 && acceptedFiles.length > 0) {
         allFiles = acceptedFiles;
         allPaths = acceptedFiles.map(
-          (file) => (file as any).webkitRelativePath || file.name,
+          (file) => (file as any).webkitRelativePath || file.name
         );
       }
 
@@ -90,11 +90,11 @@ const UploadFilesPage: React.FC = () => {
         handleUpload(allFiles, allPaths);
       }
     },
-    [],
+    []
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
+    onDrop
   });
 
   return (
@@ -124,16 +124,16 @@ const UploadFilesPage: React.FC = () => {
             {...getRootProps()}
             className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-[hsl(var(--card))] p-12 text-center transition-all duration-300 ease-in-out cursor-pointer
               ${
-                isDragActive
-                  ? "border-[hsl(var(--primary))] bg-[hsl(var(--primary))]/10 scale-105 shadow-2xl shadow-[hsl(var(--primary))]/20"
-                  : "border-[hsl(var(--input))] hover:border-[hsl(var(--primary))]/50 hover:bg-[hsl(var(--accent))]"
-              }`}
+    isDragActive
+      ? "border-[hsl(var(--primary))] bg-[hsl(var(--primary))]/10 scale-105 shadow-2xl shadow-[hsl(var(--primary))]/20"
+      : "border-[hsl(var(--input))] hover:border-[hsl(var(--primary))]/50 hover:bg-[hsl(var(--accent))]"
+    }`}
           >
             <input
               {...getInputProps(
                 uploadType === "folder"
                   ? { directory: "true", webkitdirectory: "true" }
-                  : { multiple: true },
+                  : { multiple: true }
               )}
             />
             <div className="absolute top-6 right-6">

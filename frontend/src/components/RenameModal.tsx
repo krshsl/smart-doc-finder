@@ -12,7 +12,7 @@ export const RenameModal: React.FC<RenameModalProps> = ({
   isOpen,
   onClose,
   onSave,
-  currentItem,
+  currentItem
 }) => {
   const [name, setName] = useState("");
 

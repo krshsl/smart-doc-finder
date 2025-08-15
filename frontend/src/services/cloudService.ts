@@ -1,4 +1,4 @@
-import { FileItem, FolderData, FolderItem } from "../types";
+import { FileItem, FolderItem, FolderResponse } from "../types";
 
 import api from "./api";
 
@@ -8,10 +8,14 @@ export const getStorageUsage = async(userId: string): Promise<any> => {
 };
 
 export const getFolderContents = async(
-  folderId: string | null
-): Promise<FolderData> => {
+  folderId: string | null,
+  page: number
+): Promise<FolderResponse> => {
   const endpoint = folderId ? `/folder/${folderId}` : "/folder";
-  const response = await api.get(endpoint, { allowGuest: true });
+  const response = await api.get(endpoint, {
+    params: { page },
+    allowGuest: true
+  });
   return response.data;
 };
 
@@ -80,7 +84,7 @@ export const downloadItems = async(
       file_ids: fileIds,
       folder_ids: folderIds
     },
-    { responseType: "blob", allowGuest: true }
+    { responseType: "blob" }
   );
   return response.data;
 };

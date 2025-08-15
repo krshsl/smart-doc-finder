@@ -1,7 +1,7 @@
 import {
   CloudArrowUpIcon,
   FolderPlusIcon,
-  DocumentPlusIcon,
+  DocumentPlusIcon
 } from "@heroicons/react/24/outline";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
@@ -20,13 +20,13 @@ export const CreateItemModal: React.FC<{
   const [type, setType] = useState<"folder" | "file">("folder");
 
   const onDrop = useCallback(
-    async (acceptedFiles: File[], fileRejections: any[], event: any) => {
+    async(acceptedFiles: File[], fileRejections: any[], event: any) => {
       let allFiles: File[] = [];
       let allPaths: string[] = [];
 
       if (event.dataTransfer && event.dataTransfer.items) {
         const items = Array.from(
-          event.dataTransfer.items as DataTransferItemList,
+          event.dataTransfer.items as DataTransferItemList
         );
         for (const item of items) {
           const entry = item.webkitGetAsEntry();
@@ -41,7 +41,7 @@ export const CreateItemModal: React.FC<{
       if (allFiles.length === 0 && acceptedFiles.length > 0) {
         allFiles = acceptedFiles;
         allPaths = acceptedFiles.map(
-          (file) => (file as any).webkitRelativePath || file.name,
+          (file) => (file as any).webkitRelativePath || file.name
         );
       }
 
@@ -50,18 +50,18 @@ export const CreateItemModal: React.FC<{
         resetAndClose();
       }
     },
-    [onUploadFiles],
+    [onUploadFiles]
   );
 
   const {
     getRootProps: getFolderRootProps,
     getInputProps: getFolderInputProps,
-    isDragActive: isFolderDragActive,
+    isDragActive: isFolderDragActive
   } = useDropzone({ onDrop, noClick: false });
   const {
     getRootProps: getFileRootProps,
     getInputProps: getFileInputProps,
-    isDragActive: isFileDragActive,
+    isDragActive: isFileDragActive
   } = useDropzone({ onDrop, multiple: true });
 
   const handleSave = () => {
@@ -147,7 +147,7 @@ export const CreateItemModal: React.FC<{
             <div className="mt-6 space-y-4">
               <div
                 {...getFileRootProps({
-                  className: `flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors ${isFileDragActive ? "border-[hsl(var(--primary))] bg-[hsl(var(--primary))]/10" : "border-[hsl(var(--input))] hover:border-[hsl(var(--muted-foreground))]"}`,
+                  className: `flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors ${isFileDragActive ? "border-[hsl(var(--primary))] bg-[hsl(var(--primary))]/10" : "border-[hsl(var(--input))] hover:border-[hsl(var(--muted-foreground))]"}`
                 })}
               >
                 <input {...getFileInputProps()} />
@@ -167,13 +167,13 @@ export const CreateItemModal: React.FC<{
               </div>
               <div
                 {...getFolderRootProps({
-                  className: `flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors ${isFolderDragActive ? "border-[hsl(var(--primary))] bg-[hsl(var(--primary))]/10" : "border-[hsl(var(--input))] hover:border-[hsl(var(--muted-foreground))]"}`,
+                  className: `flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors ${isFolderDragActive ? "border-[hsl(var(--primary))] bg-[hsl(var(--primary))]/10" : "border-[hsl(var(--input))] hover:border-[hsl(var(--muted-foreground))]"}`
                 })}
               >
                 <input
                   {...getFolderInputProps({
                     directory: "true",
-                    webkitdirectory: "true",
+                    webkitdirectory: "true"
                   })}
                 />
                 <CloudArrowUpIcon className="h-10 w-10 text-[hsl(var(--primary))]" />

@@ -1,7 +1,7 @@
 import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
-  InformationCircleIcon,
+  InformationCircleIcon
 } from "@heroicons/react/24/outline";
 import * as Dialog from "@radix-ui/react-dialog";
 import React from "react";
@@ -9,7 +9,7 @@ import React from "react";
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  title: string;
+  title?: string;
   type?: "success" | "error" | "info";
   children: React.ReactNode;
 }
@@ -19,30 +19,36 @@ export const Modal: React.FC<ModalProps> = ({
   onClose,
   title,
   type = "info",
-  children,
+  children
 }) => {
+  const _title = {
+    success: "Success",
+    error: "Error",
+    info: "Info"
+  };
+
   const config = {
     success: {
       Icon: CheckCircleIcon,
       iconColor: "text-green-600",
       bgColor: "bg-green-100",
       buttonClass:
-        "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] hover:bg-[hsl(var(--primary))]/90 focus-visible:ring-[hsl(var(--ring))]",
+        "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] hover:bg-[hsl(var(--primary))]/90 focus-visible:ring-[hsl(var(--ring))]"
     },
     error: {
       Icon: ExclamationTriangleIcon,
       iconColor: "text-red-600",
-      bgColor: "bg-red-100",
+      bgColor: "bg-red-50",
       buttonClass:
-        "bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))] hover:bg-[hsl(var(--destructive))]/90 focus-visible:ring-[hsl(var(--destructive))]",
+        "bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))] hover:bg-[hsl(var(--destructive))]/90 focus-visible:ring-[hsl(var(--destructive))]"
     },
     info: {
       Icon: InformationCircleIcon,
       iconColor: "text-blue-600",
       bgColor: "bg-blue-100",
       buttonClass:
-        "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] hover:bg-[hsl(var(--primary))]/90 focus-visible:ring-[hsl(var(--ring))]",
-    },
+        "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] hover:bg-[hsl(var(--primary))]/90 focus-visible:ring-[hsl(var(--ring))]"
+    }
   }[type];
 
   return (
@@ -62,7 +68,7 @@ export const Modal: React.FC<ModalProps> = ({
             <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
               <Dialog.Title asChild>
                 <h3 className="text-lg font-semibold leading-6 text-[hsl(var(--foreground))]">
-                  {title}
+                  {!!title ? title : _title[type]}
                 </h3>
               </Dialog.Title>
               <div className="mt-2">

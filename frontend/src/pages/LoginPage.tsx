@@ -12,7 +12,7 @@ const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async(e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
@@ -34,7 +34,7 @@ const LoginPage: React.FC = () => {
     }
   };
 
-  const handleGuestLogin = async () => {
+  const handleGuestLogin = async() => {
     setIsLoading(true);
     setError(null);
     let login_success = true;
@@ -125,7 +125,7 @@ const LoginPage: React.FC = () => {
         <button
           type="button"
           onClick={handleGuestLogin}
-          className="w-full flex justify-center rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--secondary))] py-2.5 px-4 font-semibold text-[hsl(var(--secondary-foreground))] shadow-sm hover:bg-[hsl(var(--accent))]"
+          className="w-full flex justify-center rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--secondary))] py-2.5 px-4 font-semibold text-[hsl(var(--secondary-foreground))] shadow-sm hover:bg-[hsl(var(--primary))] hover:text-[hsl(var(--primary-foreground))]"
         >
           Login as Guest
         </button>

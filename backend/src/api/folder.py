@@ -1,5 +1,6 @@
 import zipfile
 from io import BytesIO
+from math import ceil
 
 from bson import DBRef, ObjectId
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -96,27 +97,24 @@ async def edit_file(
 
 
 @router.get("/folder", status_code=status.HTTP_200_OK)
-async def get_default_folder(token=Depends(auth.verify_access_token)):
-    token_data, current_user = token
-    folder = await Folder.find_one(
-        Folder.name == DEFAULT_FOLDER,
-        Folder.owner == DBRef(User.__name__, current_user.id),
-        Folder.parent == None,
-    )
-    if not folder:
-        raise_not_found(Folder.__name__)
-
-    owner = await folder.owner.fetch()
-    if owner.id != current_user.id:
-        raise_access_denied()
-
-    return await folder._to_dict(include_refs=True)
-
-
 @router.get("/folder/{folder_id}", status_code=status.HTTP_200_OK)
-async def get_folder_contents(folder_id: str, token=Depends(auth.verify_access_token)):
+async def get_folder_contents(
+    folder_id: str | None = None,
+    page: int = 1,
+    limit: int = 20,
+    token=Depends(auth.verify_access_token),
+):
     token_data, current_user = token
-    folder = await Folder.get(ObjectId(folder_id))
+
+    if folder_id:
+        folder = await Folder.get(ObjectId(folder_id))
+    else:
+        folder = await Folder.find_one(
+            Folder.name == DEFAULT_FOLDER,
+            Folder.owner == DBRef(User.__name__, current_user.id),
+            Folder.parent == None,
+        )
+
     if not folder:
         raise_not_found(Folder.__name__)
 
@@ -124,7 +122,33 @@ async def get_folder_contents(folder_id: str, token=Depends(auth.verify_access_t
     if owner.id != current_user.id:
         raise_access_denied()
 
-    return await folder._to_dict(include_refs=True, include_parents=True)
+    skip = (page - 1) * limit
+
+    sub_folders_query = Folder.find(Folder.parent.id == folder.id)
+    files_query = File.find(File.folder.id == folder.id)
+
+    total_folders = await sub_folders_query.count()
+    total_files = await files_query.count()
+    total_items = total_folders + total_files
+
+    sub_folders = await sub_folders_query.skip(skip).limit(limit).to_list()
+
+    remaining_limit = limit - len(sub_folders)
+    files_skip = max(0, skip - total_folders)
+
+    files = []
+    if remaining_limit > 0:
+        files = await files_query.skip(files_skip).limit(remaining_limit).to_list()
+
+    folder_dict = await folder._to_dict(include_refs=False, include_parents=True)
+    folder_dict["sub_folders"] = [await f._to_dict() for f in sub_folders]
+    folder_dict["files"] = [await f._to_dict() for f in files]
+
+    return {
+        "folder_data": folder_dict,
+        "total_pages": ceil(total_items / limit),
+        "current_page": page,
+    }
 
 
 @router.get("/folder/download/{folder_id}", status_code=status.HTTP_200_OK)

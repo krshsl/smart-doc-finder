@@ -41,3 +41,9 @@ export interface FolderData extends FolderItem {
   sub_folders: FolderItem[];
   breadcrumbs: Breadcrumb[];
 }
+
+export interface FolderResponse extends FolderItem {
+  folder_data: FolderData;
+  total_pages: number;
+  current_page: number;
+}
