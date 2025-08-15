@@ -67,14 +67,14 @@ class Folder(BaseDocument):
             ).to_list()
             folder["files"] = []
             for file in files:
-                folder["files"].append(file._to_dict())
+                folder["files"].append(await file._to_dict())
 
             sub_folders = await Folder.find(
                 Folder.parent == DBRef(Folder.__name__, self.id)
             ).to_list()
             folder["sub_folders"] = []
             for sub_folder in sub_folders:
-                folder["sub_folders"] = sub_folder._to_dict(
+                folder["sub_folders"] = await sub_folder._to_dict(
                     include_refs=include_children, include_children=include_children
                 )
 

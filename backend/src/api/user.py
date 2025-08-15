@@ -1,4 +1,3 @@
-from asyncio import gather
 from os import getenv
 from typing import List
 
@@ -131,7 +130,7 @@ async def get_users(data: UsersRequest, token=Depends(auth.verify_access_token))
     )
 
     return {
-        "items": await gather(*(u._to_dict() for u in users)),
+        "items": [await u._to_dict() for u in users],
         "total": total_users,
         "page": data.page,
         "size": data.size,
@@ -214,5 +213,5 @@ async def delete_multiple_users(
     users = await User.find(
         {"_id": {"$in": [ObjectId(uid) for uid in data.user_ids]}}
     ).to_list()
-    await gather(*(u.delete() for u in users))
+    [await u.delete() for u in users]
     return {"message": f"{len(data.user_ids)} users deleted successfully"}
