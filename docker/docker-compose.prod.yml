@@ -16,12 +16,10 @@ services:
       context: ../frontend
       dockerfile: Dockerfile
       args:
-        - VITE_API_BASE_URL=/api
         - VITE_NODE_ENV=production
     working_dir: /app
     environment:
       - VITE_API_BASE_URL=/api
-      - VITE_NODE_ENV=production
     command: npm run preview -- --host
     deploy:
       resources:

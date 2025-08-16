@@ -16,7 +16,6 @@ services:
       context: ../frontend
       dockerfile: Dockerfile
       args:
-        - VITE_API_BASE_URL=/api
         - VITE_NODE_ENV=development
     container_name: smart-doc-frontend
     working_dir: /app
@@ -24,7 +23,6 @@ services:
       - ../frontend:/app
       - node_modules:/app/node_modules
     environment:
-      - VITE_API_BASE_URL=/api
       - VITE_NODE_ENV=development
     command: npm run dev -- --host
     deploy:

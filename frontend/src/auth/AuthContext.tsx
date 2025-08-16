@@ -43,7 +43,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const logout = async(skipApiCall = false) => {
     if (!skipApiCall) {
       try {
-        await api.post("/logout");
+        await api.post("/logout", { allowGuest: true });
       } catch (error) {
         console.error("Logout API call failed:", error);
       }
