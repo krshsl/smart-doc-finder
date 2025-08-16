@@ -126,7 +126,7 @@ const UploadFilesPage: React.FC = () => {
               ${
     isDragActive
       ? "border-[hsl(var(--primary))] bg-[hsl(var(--primary))]/10 scale-105 shadow-2xl shadow-[hsl(var(--primary))]/20"
-      : "border-[hsl(var(--input))] hover:border-[hsl(var(--primary))]/50 hover:bg-[hsl(var(--accent))]"
+      : "border-[hsl(var(--input))] hover:border-[hsl(var(--primary))]/50 hover:bg-[hsl(var(--primary))]/20"
     }`}
           >
             <input
