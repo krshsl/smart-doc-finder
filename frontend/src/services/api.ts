@@ -1,7 +1,5 @@
 import axios, { AxiosError } from "axios";
 
-import { API_BASE_URL } from "../config";
-
 import eventBus from "./eventBus";
 
 let userRole: string | null = null;
@@ -10,7 +8,7 @@ eventBus.on("userUpdate", (user) => {
 });
 
 const api = axios.create({
-  baseURL: API_BASE_URL
+  baseURL: "/api"
 });
 
 export const setupInterceptors = () => {
