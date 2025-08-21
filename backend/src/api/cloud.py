@@ -165,8 +165,7 @@ async def bulk_upload(
             )
 
     if storage_to_add > 0:
-        current_user.used_storage += storage_to_add
-        await current_user.save()
+        await current_user.update({"$inc": {"used_storage": storage_to_add}})
 
     return JSONResponse(
         status_code=status.HTTP_207_MULTI_STATUS,

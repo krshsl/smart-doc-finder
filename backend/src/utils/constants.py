@@ -1,3 +1,5 @@
+from pathlib import Path
+
 META_DATA_SIZE = 256
 DEFAULT_FOLDER = "Home"
 STORAGE_QUOTA = 32 * 1024 * 1024
@@ -24,3 +26,6 @@ REQUIRED_APP_VARS = [
     "EMBEDDING_MODEL_NAME",
     "MAX_CONCURRENT_REQUESTS",
 ]
+
+
+TEMP_UPLOAD_DIR = Path("/tmp/smart-doc-finder/uploads")
