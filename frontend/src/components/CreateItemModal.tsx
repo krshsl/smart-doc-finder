@@ -5,10 +5,9 @@ import {
 } from "@heroicons/react/24/outline";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
-import React, { useCallback, useState } from "react";
-import { useDropzone } from "react-dropzone";
+import React, { useState } from "react";
 
-import { getFilesFromEntry } from "../utils/fileUtils";
+import { FileUpload } from "./FileUpload";
 
 export const CreateItemModal: React.FC<{
   isOpen: boolean;
@@ -19,50 +18,10 @@ export const CreateItemModal: React.FC<{
   const [name, setName] = useState("");
   const [type, setType] = useState<"folder" | "file">("folder");
 
-  const onDrop = useCallback(
-    async(acceptedFiles: File[], fileRejections: any[], event: any) => {
-      let allFiles: File[] = [];
-      let allPaths: string[] = [];
-
-      if (event.dataTransfer && event.dataTransfer.items) {
-        const items = Array.from(
-          event.dataTransfer.items as DataTransferItemList
-        );
-        for (const item of items) {
-          const entry = item.webkitGetAsEntry();
-          if (entry) {
-            const result = await getFilesFromEntry(entry);
-            allFiles = allFiles.concat(result.files);
-            allPaths = allPaths.concat(result.paths);
-          }
-        }
-      }
-
-      if (allFiles.length === 0 && acceptedFiles.length > 0) {
-        allFiles = acceptedFiles;
-        allPaths = acceptedFiles.map(
-          (file) => (file as any).webkitRelativePath || file.name
-        );
-      }
-
-      if (allFiles.length > 0) {
-        onUploadFiles(allFiles, allPaths);
-        resetAndClose();
-      }
-    },
-    [onUploadFiles]
-  );
-
-  const {
-    getRootProps: getFolderRootProps,
-    getInputProps: getFolderInputProps,
-    isDragActive: isFolderDragActive
-  } = useDropzone({ onDrop, noClick: false });
-  const {
-    getRootProps: getFileRootProps,
-    getInputProps: getFileInputProps,
-    isDragActive: isFileDragActive
-  } = useDropzone({ onDrop, multiple: true });
+  const handleFilesReady = (files: File[], paths: string[]) => {
+    onUploadFiles(files, paths);
+    resetAndClose();
+  };
 
   const handleSave = () => {
     if (type === "folder" && name.trim()) {
@@ -145,19 +104,22 @@ export const CreateItemModal: React.FC<{
             </div>
           ) : (
             <div className="mt-6 space-y-4">
-              <div
-                {...getFileRootProps({
-                  className: `flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors ${isFileDragActive ? "border-[hsl(var(--primary))] bg-[hsl(var(--primary))]/10" : "border-[hsl(var(--input))] hover:border-[hsl(var(--muted-foreground))]"}`
-                })}
+              <FileUpload
+                onFilesReady={handleFilesReady}
+                dropzoneOptions={{ multiple: true }}
+                className="flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors hover:border-[hsl(var(--muted-foreground))]"
               >
-                <input {...getFileInputProps()} />
-                <CloudArrowUpIcon className="h-10 w-10 text-[hsl(var(--primary))]" />
-                <p className="mt-2 text-center text-sm font-semibold text-[hsl(var(--foreground))]">
-                  {isFileDragActive
-                    ? "Drop files here..."
-                    : "Drag & drop or click to select files"}
-                </p>
-              </div>
+                {({ isDragActive }) => (
+                  <>
+                    <CloudArrowUpIcon className="h-10 w-10 text-[hsl(var(--primary))]" />
+                    <p className="mt-2 text-center text-sm font-semibold text-[hsl(var(--foreground))]">
+                      {isDragActive
+                        ? "Drop files here..."
+                        : "Drag & drop or click to select files"}
+                    </p>
+                  </>
+                )}
+              </FileUpload>
               <div className="my-2 flex items-center">
                 <div className="flex-grow border-t border-[hsl(var(--border))]"></div>
                 <span className="mx-4 flex-shrink text-xs text-[hsl(var(--muted-foreground))]">
@@ -165,24 +127,22 @@ export const CreateItemModal: React.FC<{
                 </span>
                 <div className="flex-grow border-t border-[hsl(var(--border))]"></div>
               </div>
-              <div
-                {...getFolderRootProps({
-                  className: `flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors ${isFolderDragActive ? "border-[hsl(var(--primary))] bg-[hsl(var(--primary))]/10" : "border-[hsl(var(--input))] hover:border-[hsl(var(--muted-foreground))]"}`
-                })}
+              <FileUpload
+                onFilesReady={handleFilesReady}
+                inputProps={{ directory: "true", webkitdirectory: "true" }}
+                className="flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors hover:border-[hsl(var(--muted-foreground))]"
               >
-                <input
-                  {...getFolderInputProps({
-                    directory: "true",
-                    webkitdirectory: "true"
-                  })}
-                />
-                <CloudArrowUpIcon className="h-10 w-10 text-[hsl(var(--primary))]" />
-                <p className="mt-2 text-center text-sm font-semibold text-[hsl(var(--foreground))]">
-                  {isFolderDragActive
-                    ? "Drop folder here..."
-                    : "Drag & drop or click to upload a folder"}
-                </p>
-              </div>
+                {({ isDragActive }) => (
+                  <>
+                    <CloudArrowUpIcon className="h-10 w-10 text-[hsl(var(--primary))]" />
+                    <p className="mt-2 text-center text-sm font-semibold text-[hsl(var(--foreground))]">
+                      {isDragActive
+                        ? "Drop folder here..."
+                        : "Drag & drop or click to upload a folder"}
+                    </p>
+                  </>
+                )}
+              </FileUpload>
             </div>
           )}
 
@@ -190,7 +150,7 @@ export const CreateItemModal: React.FC<{
             <Dialog.Close asChild>
               <button
                 type="button"
-                className="w-full rounded-md bg-[hsl(var(--secondary))] px-4 py-2.5 text-sm font-semibold text-[hsl(var(--secondary-foreground))] hover:bg-[hsl(var(--accent))] focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2"
+                className="w-full rounded-md bg-[hsl(var(--secondary))] px-4 py-2.5 text-sm font-semibold text-[hsl(var(--secondary-foreground))] hover:bg-[hsl(var(--accent))]"
               >
                 Cancel
               </button>
